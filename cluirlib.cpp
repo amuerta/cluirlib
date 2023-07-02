@@ -1,6 +1,4 @@
 #include "cluirlib.h"
-#include <cmath>
-
 
 //
 //
@@ -11,6 +9,9 @@
 //      of 1 char
 //
 //
+
+
+
 template<typename T>
 uint Dynamic2DArray<T>::size_x() {
   return size.x; 
@@ -40,8 +41,8 @@ void Dynamic2DArray<T>::reserve(uint size_x , uint size_y) {
 
 void gotoxy(int x, int y) {printf("\033[%d;%dH", y, x);}
 //printf("%c[%d;%df",0x1B,y,x)^^^^^^^^^^^^^^^^^; 
-void cursorOnLineUp()              { printf("\033[1A"); }
-void hideCursor()                  {std::cout << "\e[?25l";}
+void cursorOnLineUp() { printf("\033[1A"); }
+void hideCursor()  {std::cout << "\e[?25l";}
 double parse_percents(percent number) { return (double)number / 100; }
 
 vec2<uint> get_real_from_percents(vec2<uint> number, vec2<percent> percents) 
@@ -56,12 +57,6 @@ vec2<uint> get_real_from_percents(vec2<uint> number, vec2<percent> percents)
 
 namespace cluir
 {
-
-  point Bresenham(point start, point end) {
-    
-  }
-
-
 
   Block Block::add_object(Object::Type type) 
   {
@@ -88,19 +83,126 @@ namespace cluir
     return SIZE;
   }
 
-  Screen Screen::draw_rect(point top_left_position, rectangle size) {
-    for(uint horizontal=top_left_position.x; horizontal < top_left_position.x+size.x; horizontal++) 
+
+  Screen Screen::draw_line(point begin, point end) {
+    int difference_x = (end.x - begin.x);
+    int difference_y = (end.y - begin.y);
+    int sign_x = (begin.x < end.x) ? 1 : -1;
+    int sign_y = (begin.y < end.y) ? 1 : -1;
+    int change_bias = difference_x - difference_y;
+
+    ValuesMap.at(end.x, end.y) = FILLED_PIXEL;
+ 
+    while(begin.x != end.x || begin.y != end.y) 
     {
-      ValuesMap.at(horizontal, top_left_position.y) = 2;
-      ValuesMap.at(horizontal, top_left_position.y+size.y-1) = 2;
-    }
-    for(uint vertical=top_left_position.y; vertical < top_left_position.y+size.y; vertical++) 
-    {
-      ValuesMap.at(top_left_position.x, vertical) = 2;
-      ValuesMap.at(top_left_position.x+size.x-1, vertical) = 2;
+      ValuesMap.at(begin.x, begin.y) = FILLED_PIXEL;
+      int bias_after = change_bias * 2;
+      if (bias_after > -difference_y) 
+      {
+        change_bias -= difference_y;
+        begin.x += sign_x;
+      }
+      if (bias_after < difference_x) 
+      {
+        change_bias += difference_x;
+        begin.y += sign_y;
+      }
+    }  
+
+    return  *this;
+  }
+
+  /*
+  Screen Screen::draw_line(point begin, point end) {
+
+    point line_begining = (begin.x < end.x) ? begin : end;
+    point line_ending = (begin.x < end.x) ? end : begin;
+    uint lenth = end.x - begin.x;
+    uint height = end.y - begin.y;
+    double slope = (double)height/(double)lenth;
+    std::cout << "slope ==> "<< slope << "\n";
+    for(uint x = line_begining.x; x < line_ending.x; x++) 
+    { 
+      if(slope > 1 ) {
+        for (uint y = round(slope*x); y < round(slope*(x+1)); y++) {
+          ValuesMap
+            .at( x , y ) = FILLED_PIXEL;
+        }
+      }
+      else {
+        ValuesMap
+          .at( x , round((slope)*x) ) = FILLED_PIXEL;
+      }
+      std::cout << "x : " << x << "  y : " << round((slope * x)) << "\n";
     }
     return *this;
   }
+*/
+
+  Screen Screen::draw_circle(point center, uint radius) {
+    rectangle render_area = {
+      .x = radius * 2,
+      .y = radius * 2
+    };
+
+    point area_root = {
+      .x = center.x - radius,
+      .y = center.y - radius
+    };
+
+    for (uint ypos = area_root.y; ypos < render_area.y + area_root.y; ypos++) 
+    { for (uint xpos = area_root.x; xpos < render_area.x + area_root.x; xpos++) 
+      { if (std::pow(radius, 2) < ( std::pow(xpos,2) + std::pow(ypos,2)) ) {
+           ValuesMap.at(xpos,ypos) = FILLED_PIXEL;
+         }
+      }
+    }
+    return  *this;
+  }
+
+  Screen Screen::draw_rect(point top_left_position, vec2<int> size) {
+    uint
+      end_x, begin_x,
+      end_y, begin_y
+    ;
+    //
+    // FOR X DIMENSION
+    //
+    if (top_left_position.x + size.x >= top_left_position.x) 
+    {
+      begin_x = top_left_position.x;
+      end_x = top_left_position.x + size.x;
+    }
+    else {
+      begin_x = top_left_position.x + size.x;
+      end_x = top_left_position.x;
+    }
+    //
+    // FOR Y DIMENSION
+    //
+    if (top_left_position.y + size.y >= top_left_position.y) 
+    {
+      begin_y = top_left_position.y;
+      end_y = top_left_position.y + size.y;
+    }
+    else {
+      begin_y = top_left_position.y + size.y;
+      end_y = top_left_position.y;
+    }
+    for(uint horizontal=begin_x; horizontal < end_x; horizontal++) 
+    {
+      ValuesMap.at(horizontal, begin_y) = 2;
+      ValuesMap.at(horizontal, end_y-1) = 2;
+    }
+    for(uint vertical=begin_y; vertical < end_y; vertical++) 
+    {
+      ValuesMap.at(begin_x, vertical) = 2;
+      ValuesMap.at(end_x-1, vertical) = 2;
+    }
+    return *this;
+  }
+
+
 
   Screen Screen::draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size) {
     

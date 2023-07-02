@@ -15,6 +15,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <ios>
+
+
 //#include <conio.h>
 
 //
@@ -118,8 +120,10 @@ namespace cluir {
     private:vec2<uint> get_screen_size();
     public:Screen scale(uint scaling_factor_x, uint scaling_factor_y);
     public:Screen fill_solid();
-    public:Screen draw_rect(vec2<uint> top_left_position, vec2<uint> size);
+    public:Screen draw_rect(vec2<uint> top_left_position, vec2<int> size);
     public:Screen draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size);
+    public:Screen draw_line(point begin, point end);
+    public:Screen draw_circle(point center, uint radius);
   };
 
   struct Renderer {
