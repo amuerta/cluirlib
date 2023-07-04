@@ -1,4 +1,6 @@
 #include "cluirlib.h"
+#include <string>
+#include <unistd.h>
 #include <vector>
 
 //
@@ -129,6 +131,15 @@ namespace cluir
     pixel_to_draw = type;
     std::cout << pixel_to_draw << " <- pixel \n";
     return  this;
+  }
+
+  Screen *Screen::write_text(point origin,std::string text, canvas *target) 
+  {
+    for(uint lenth=0; lenth < text.size(); lenth++) 
+    {
+      target->at(origin.x+lenth, origin.y) = text.at(lenth); 
+    } 
+    return this;
   }
 
   Screen *Screen::draw_line(point begin, point end, canvas *target ) {
@@ -278,13 +289,13 @@ namespace cluir
     }
     for(uint horizontal=begin_x; horizontal < end_x; horizontal++) 
     {
-      target->at(horizontal, begin_y) = 2;
-      target->at(horizontal, end_y-1) = 2;
+      target->at(horizontal, begin_y) = FILLED_PIXEL;
+      target->at(horizontal, end_y-1) = FILLED_PIXEL;
     }
     for(uint vertical=begin_y; vertical < end_y; vertical++) 
     {
-      target->at(begin_x, vertical) = 2;
-      target->at(end_x-1, vertical) = 2;
+      target->at(begin_x, vertical) = FILLED_PIXEL;
+      target->at(end_x-1, vertical) = FILLED_PIXEL;
     }
     return this;
   }
@@ -333,15 +344,22 @@ namespace cluir
 
   image_piece Renderer::convert_raw_pixel(uint pixel) {
     switch (pixel) {
-      case 0:
+      case EMPTY_PIXEL:
         return " ";
         break;
-      case 1: 
+      case SEMI_FILLED_PIXEL: 
         return "🮐";
-      case 2:
+      case FILLED_PIXEL:
         return "█";
+      case 32:
+      case 65 ... 122: 
+        {
+          std::string s(1,char(pixel));
+          return s;
+        }
+        break;
       default: 
-        return "!";
+        return "E";
         break;
     }
   }
@@ -373,10 +391,21 @@ namespace cluir
     return *this;
   }
 
-  
+   Screen Screen::fill_empty() {
+    for (int h = 0; h < screen_size.y; h++) {
+      for (int w = 0; w < screen_size.x; w++) {
+        ValuesMap.at(w, h) = EMPTY_PIXEL;
+      }
+    }
+    return *this;
+  }
+
+
+
   Screen NewScreen() {
     Screen scr;
-    scr.scale(100,100); 
+    scr.scale(100,100);
+    scr.fill_empty();
     std::cout << "\nscreen created\n";
     return scr;
   }
@@ -391,6 +420,15 @@ namespace cluir
     Object border;
     border.type = border.Border;
     MapBlock({border});
+    return this;
+  }
+
+  Block *Block::Add_Title(std::string label) {
+    Object title;
+    title.type = title.Title;
+    title.ExceptionalObjectData.at(0) = label;
+    std::cout << "title obj = " << title.ExceptionalObjectData.at(0) << "\n";
+    MapBlock({title});
     return this;
   }
 
@@ -414,11 +452,20 @@ namespace cluir
   {
     auto& point1 = target->ObjectData.at(0).point_norm;
     auto& size1 = target->ObjectData.at(1).size_int;
-    point1.x = position.x+1;
-    point1.y = position.y+1;
+    point1.x = position.x+DEAFULT_SCREEN_PADDING;
+    point1.y = position.y+DEAFULT_SCREEN_PADDING;
     size1.x = size.x;
     size1.y = size.y-1;
   }
+
+  void Block::title(std::string label, Object *target) {
+    auto& point1 = target->ObjectData.at(0).point_norm;
+    auto& str1 = target->ExceptionalObjectData.at(0);
+    point1.x = position.x + (size.x - str1.size())/2;
+    point1.y = position.y+DEAFULT_SCREEN_PADDING;
+    std::cout << "* title pos (" << point1.x << ":" << point1.y << ")\n";
+  }
+
 
   void Screen::flush()
   {
@@ -433,6 +480,7 @@ namespace cluir
         auto obj = List.at(i);
         auto& value1 = obj.ObjectData.at(0);
         auto& value2 = obj.ObjectData.at(1);
+        auto& except_value1 = obj.ExceptionalObjectData.at(0);
         Screen uslessScreen;
         uslessScreen.set_drawing_pixel(FILLED_PIXEL);
         
@@ -452,12 +500,16 @@ namespace cluir
             uslessScreen.draw_circle(value1.point_norm, value2.single_int, &ValuesMap);
             break;
           case Object::Type::Text:
+            uslessScreen.write_text(value1.point_norm, except_value1, &ValuesMap);
             /* to do */
             break;
           case Object::Type::Border:
             blok.border(&obj);
             uslessScreen.draw_rect(value1.point_norm,value2.size_int, &ValuesMap);
             break;
+          case Object::Type::Title:
+            blok.title(obj.ExceptionalObjectData.at(0), &obj);
+            uslessScreen.write_text(value1.point_norm, except_value1, &ValuesMap);
           case Object::Type::Nothing:
             break;
         }
@@ -485,7 +537,7 @@ namespace cluir
     std::cout << "\nSCREEN SIZE : " << scr.screen_size.x << " " << scr.screen_size.y << "\n";
     for (uint y_pos=0; y_pos < scr.screen_size.y; y_pos++) {
       for (uint x_pos=0; x_pos < scr.screen_size.x; x_pos++) {
-        if(x_pos == scr.screen_size.x-1) 
+        if(x_pos == scr.screen_size.x-DEAFULT_SCREEN_PADDING) 
         {
           Image.at(x_pos, y_pos) = "\n";
         }

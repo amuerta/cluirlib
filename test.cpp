@@ -12,7 +12,8 @@ int main ()
    
    auto blk2 = cluir::NewBlock(cluir::Block::BlockT::Void);
    auto blk = cluir::NewBlock(cluir::Block::BlockT::Void);
-   blk.Use_Border();
+   blk.Use_Border()->Add_Title(" Another Title ");
+   blk2.Add_Title(" Test ");
    SCR.add_blocks({ blk, blk2, blk })->block_alignment(cluir::BlockAlignment::Horizontal_Tiled);
    SCR.flush(); 
    //SCR.draw_rect({15,15}, {8,5}); 

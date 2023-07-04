@@ -55,16 +55,17 @@ Dynamic2DArray {
 
 
 #define DEAFULT_OBJECT_BUFFER_SIZE 10
+#define DEAFULT_SCREEN_PADDING 1
 
-#define EMPTY_PIXEL 0 
-#define SEMI_FILLED_PIXEL 1
-#define FILLED_PIXEL 2
+#define EMPTY_PIXEL 100'0 
+#define SEMI_FILLED_PIXEL 100'1
+#define FILLED_PIXEL 100'2
 
-#define JUNCTION_BORDER 20
-#define TOP_BORDER_PIXEL 21
-#define BOTTOM_BORDER_PIXEL 22
-#define LEFT_BORDER_PIXEL 23 
-#define RIGHT_BORDER_PIXEL 24
+#define JUNCTION_BORDER 100'20
+#define TOP_BORDER_PIXEL 100'21
+#define BOTTOM_BORDER_PIXEL 100'22
+#define LEFT_BORDER_PIXEL 100'23 
+#define RIGHT_BORDER_PIXEL 100'24
 
 //
 // Cluir structure initialization
@@ -100,6 +101,7 @@ namespace cluir {
       Circle,
       Text,
       Border,
+      Title,
       Nothing,
     } type;
    
@@ -115,6 +117,7 @@ namespace cluir {
    // i really dont like std::variant<T> 
    Object() {
      ObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE);
+     ExceptionalObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE);
    }
   };
  
@@ -141,7 +144,9 @@ namespace cluir {
 
     private:void MapBlock(std::vector<Object> elements);
     public:void border(Object *target);
+    public:void title(std::string label, Object *target);
     public:Block *Use_Border();
+    public:Block *Add_Title(std::string label);
 
   };
 
@@ -180,13 +185,15 @@ namespace cluir {
     
     public:Screen scale(uint scaling_factor_x, uint scaling_factor_y);
     public:Screen fill_solid();
+    public:Screen fill_empty();
     public:Screen *set_drawing_pixel(pixel type);
     public:
+     Screen *write_text(point origin,std::string text, canvas *target);
      Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, canvas *target);
      Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size, canvas *target);
-     Screen  *draw_line(point begin, point end, canvas *target);
-     Screen  *draw_line_percents(vec2<percent> begin, vec2<percent> end, canvas *target);
-     Screen  *draw_circle(point center, uint radius, canvas *target);
+     Screen *draw_line(point begin, point end, canvas *target);
+     Screen *draw_line_percents(vec2<percent> begin, vec2<percent> end, canvas *target);
+     Screen *draw_circle(point center, uint radius, canvas *target);
     public:Screen *add_blocks(std::vector<Block> blk);
     public:Screen *block_alignment(BlockAlignment Type);
     public:Screen *remove_block_byId(uint BlockId);
