@@ -15,7 +15,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <ios>
-
+#include <termios.h>
+#include <variant>
 
 //#include <conio.h>
 
@@ -34,7 +35,7 @@ typedef std::string image;
 template<typename T> struct vec2 { T x; T y; };
 
 void gotoxy(int x, int y);
-
+bool expression_with_error(std::string message);
 void cursorOnLineUp();             
 void hideCursor();            
 double parse_percents(percent number);
@@ -52,8 +53,11 @@ Dynamic2DArray {
   void clear();
 };
 
+
+#define DEAFULT_OBJECT_BUFFER_SIZE 10
+
 #define EMPTY_PIXEL 0 
-#define SEMI_FILLED 1
+#define SEMI_FILLED_PIXEL 1
 #define FILLED_PIXEL 2
 
 #define JUNCTION_BORDER 20
@@ -73,28 +77,77 @@ namespace cluir {
   typedef vec2<uint> point;
   typedef vec2<uint> line;
   typedef vec2<uint> rectangle;
+  typedef Dynamic2DArray<pixel> canvas; 
+ 
   
+
+  enum event {
+    Close,
+    Terminate,
+    Nothing
+  };
+
+  struct action {
+    char key;
+    event job;
+  };
 
   struct Object {
     enum Type {
+      Point,
+      Line,
+      Rect,
+      Circle,
+      Text,
+      Border,
       Nothing,
     } type;
+   
+   union variying_data {
+      vec2<int> size_int;
+      vec2<uint> size_uint;
+      point point_norm;
+      int single_int;
+      char single_char;
+   };
+   std::vector<variying_data> ObjectData;
+   std::vector<std::string> ExceptionalObjectData;
+   // i really dont like std::variant<T> 
+   Object() {
+     ObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE);
+   }
   };
-  
+ 
+  struct Property {
+    enum Type {
+      borders,
+    } type;
+  };
+
+  enum BlockAlignment {
+    Horizontal_Tiled,
+  };
 
   struct Block 
   { 
     enum BlockT { Text, Canvas, Picture , Grid , Graph , Panel , Menu , Void} BlockType;
-    vec2<uint> position;
+    
+    point position;
     vec2<uint> size;
+    vec2<percent> position_percents;
+    vec2<percent> size_percents;
+   
     std::vector<Object> ObjectList;
 
-    Block add_object(Object::Type);
+    private:void MapBlock(std::vector<Object> elements);
+    public:void border(Object *target);
+    public:Block *Use_Border();
+
   };
 
 
-  struct Rules {
-    struct pixel_type {
+  namespace Rules {
+    struct pixelType {
       enum type {
         Regular,
         HorizontalBorder,
@@ -106,24 +159,38 @@ namespace cluir {
       } type;
       char32_t pixel;
     };
-    std::vector<pixel_type> global_pixel_types;
-
+    enum updateType {
+      onInput,
+      updatesPS,
+      onEvent
+    };
   };
 
   struct Screen {
-
+    
+    pixel pixel_to_draw;
     vec2<uint> screen_size;
     std::vector<Block> BlockList;
     Dynamic2DArray<pixel> ValuesMap;
     Dynamic2DArray<color> ColorMap;
 
+    private:bool integrety_check(point cordinate);
     private:vec2<uint> get_screen_size();
+    private:void horizontal_tiled_align();
+    
     public:Screen scale(uint scaling_factor_x, uint scaling_factor_y);
     public:Screen fill_solid();
-    public:Screen draw_rect(vec2<uint> top_left_position, vec2<int> size);
-    public:Screen draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size);
-    public:Screen draw_line(point begin, point end);
-    public:Screen draw_circle(point center, uint radius);
+    public:Screen *set_drawing_pixel(pixel type);
+    public:
+     Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, canvas *target);
+     Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size, canvas *target);
+     Screen  *draw_line(point begin, point end, canvas *target);
+     Screen  *draw_line_percents(vec2<percent> begin, vec2<percent> end, canvas *target);
+     Screen  *draw_circle(point center, uint radius, canvas *target);
+    public:Screen *add_blocks(std::vector<Block> blk);
+    public:Screen *block_alignment(BlockAlignment Type);
+    public:Screen *remove_block_byId(uint BlockId);
+    public:void flush();
   };
 
   struct Renderer {
@@ -131,21 +198,25 @@ namespace cluir {
     Dynamic2DArray<image_piece> Frame;
     Dynamic2DArray<image> BuildFrame(Screen scr);
     void render(Dynamic2DArray<image_piece> frame);
-    Renderer flush();
+    Renderer finish();
     Renderer hold_frame(uint seconds);
     image_piece convert_raw_pixel(uint pixel);
   };
 
-  struct InputManager {};
+  struct InputManager {
+    char readkey();
+    std::vector<event> ActionList;
+    event readUserInput();
+    void StartInputServer();
+  };
   struct DataManager {};
 
 
   Screen NewScreen();
   Renderer NewRenderEngine();
   Block NewBlock(Block::BlockT type);
-  Block FillBlock(std::vector<Object> elements);
+
 
   // end of namespace 
 }
-
 
