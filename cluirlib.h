@@ -11,12 +11,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <asm-generic/ioctls.h>
-#include <cstdint>
 #include <cstdio>
 #include <ios>
 #include <termios.h>
-#include <variant>
 
 //#include <conio.h>
 
@@ -142,6 +139,7 @@ namespace cluir {
   { 
     enum BlockT { Text, Canvas, Picture , Grid , Graph , Panel , Menu , Void} BlockType;
     
+    point last_object_position;
     point position;
     vec2<uint> size;
     vec2<percent> position_percents;
@@ -199,7 +197,7 @@ namespace cluir {
     public:Screen fill_empty();
     public:Screen *set_drawing_pixel(pixel type);
     public:
-     Screen *write_text(point origin,std::string text);
+     Screen *write_text(uint max_line_lenth,point origin,std::string text);
      Screen *draw_point(point p, pixel pix);
      Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, pixel line_types[6]);
      Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size);
@@ -209,6 +207,7 @@ namespace cluir {
     public:Screen *add_blocks(std::vector<Block> blk);
     public:Screen *block_alignment(BlockAlignment Type);
     public:Screen *remove_block_byId(uint BlockId);
+    public:void handler(Object obj, Block blk);
     public:void flush();
   };
 

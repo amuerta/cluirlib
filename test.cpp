@@ -17,13 +17,14 @@ int main ()
    blk.UseFancyBorder()
       ->Add_Title(" Neat ")
       ->CreateList({
-            " * Now i can do vodoo magic",
-            " * Render text to a screen in list manner ",
-            " TODO: literally anything else"," [?] cool ?", 
-            " [!] yes."}
-            ,2);
+            "* I am a magician of text ui heheh",
+            "* Render text to a screen in list manner",
+            "TODO: literally anything else",
+            "[?] cool?", 
+            "[!] yes."}
+            ,0);
 
-   SCR.add_blocks({ blk, blk2, blk2 })->block_alignment(cluir::BlockAlignment::Horizontal_Tiled);
+   SCR.add_blocks({ blk, blk, blk2 })->block_alignment(cluir::BlockAlignment::Horizontal_Tiled);
    SCR.flush(); 
 
 

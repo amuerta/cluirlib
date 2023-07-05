@@ -142,12 +142,32 @@ namespace cluir
     return this;
   }
 
-  Screen *Screen::write_text(point origin,std::string text) 
+  Screen *Screen::write_text(uint max_line_lenth,point origin,std::string text) 
   {
-    for(uint lenth=0; lenth < text.size(); lenth++) 
-    {
-      ValuesMap.at(origin.x+lenth, origin.y) = text.at(lenth); 
-    } 
+
+    if (max_line_lenth < text.size()) {
+      uint line_counter = 0;
+      uint char_counter = 0;
+      for(uint lenth=0; lenth < text.size(); lenth++) { 
+        if(char_counter > max_line_lenth) {
+          ValuesMap.at(origin.x+char_counter, origin.y + line_counter) = text.at(lenth);
+          line_counter++;
+          char_counter=0;
+        }
+        else 
+        {
+          ValuesMap.at(origin.x+char_counter, origin.y + line_counter) = text.at(lenth);
+          char_counter++;
+        }
+      }
+    }
+    else {
+
+      for(uint lenth=0; lenth < text.size(); lenth++) 
+      {
+        ValuesMap.at(origin.x+lenth, origin.y) = text.at(lenth);
+      }
+    }
     return this;
   }
 
@@ -482,6 +502,7 @@ namespace cluir
     Object l;
     l.type = l.List;
     l.ObjectData.at(1).size_single = spacing_multiplier;
+    l.ExceptionalObjectData.resize(list.size()+1);
     for (size_t lines = 0; lines < list.size(); lines++) 
     {
       l.ExceptionalObjectData.at(lines) = list.at(lines);
@@ -499,108 +520,158 @@ namespace cluir
 
 
 
-  void Block::MapBlock(std::vector<Object> elements) {
+  void Block::MapBlock(std::vector<Object> elements)
+  {
     for (uint i = 0; i < elements.size(); i++) 
     {
       ObjectList.push_back(elements.at(i)); 
     }
   }
 
-  void Block::border_solid(Object *target) 
-  {
-    auto& point1 = target->ObjectData.at(0).point_norm;
-    auto& size1 = target->ObjectData.at(1).size_int;
-    point1.x = position.x+DEAFULT_SCREEN_PADDING;
-    point1.y = position.y+DEAFULT_SCREEN_PADDING;
-    size1.x = size.x;
-    size1.y = size.y-1;
-  }
+// EXAMPLE IF I EVER WANT TO GO BACK FOR THE OLD DESIGN
+  // void Block::border_solid(Object *target) 
+  // {
+  //   auto& point1 = target->ObjectData.at(0).point_norm;
+  //   auto& size1 = target->ObjectData.at(1).size_int;
+  //   point1.x = position.x+DEAFULT_SCREEN_PADDING;
+  //   point1.y = position.y+DEAFULT_SCREEN_PADDING;
+  //   size1.x = size.x;
+  //   size1.y = size.y-1;
+  // }
 
 
-  void Block::title(std::string label, Object *target) {
-    auto& point1 = target->ObjectData.at(0).point_norm;
-    auto& chk = target->ObjectData.at(1).checker;
-    auto& str1 = target->ExceptionalObjectData.at(0);
-    
-    point1.x = position.x + (size.x - str1.size())/2;
-    point1.y = position.y+DEAFULT_SCREEN_PADDING;
-    
-    std::cout << "* title pos (" << point1.x << ":" << point1.y << ")\n";
+
+  void Screen::handler(Object obj, Block blok) {
+    auto& chk = obj.ObjectData.at(1);
+    auto& value1 = obj.ObjectData.at(0);
+    auto& value2 = obj.ObjectData.at(1);
+    auto& except_value = obj.ExceptionalObjectData;
+    auto& except_value1 = obj.ExceptionalObjectData.at(0);
+    pixel FILLER[6] = {FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL};
+    pixel FANCYBORDER[6] = {HORIZ_BORDER_PIXEL,VERT_BORDER_PIXEL,TOPLEFT_BORDER_PIXEL,TOPRIGHT_BORDER_PIXEL,BOTRIGHT_BORDER_PIXEL, BOTLEFT_BORDER_PIXEL} ;
+  
+    switch (obj.type) {
+      
+      case Object::Type::Point:
+        ValuesMap.at(value1.point_norm.x, value1.point_norm.y);
+        break;
+      
+      case Object::Type::Line:
+        draw_line(value1.point_norm, value2.point_norm );
+        break;
+      
+      case Object::Type::Rect:
+        draw_rect(value1.point_norm,value2.size_int, FILLER);
+        break;
+      
+      case Object::Type::Circle:
+        draw_circle(value1.point_norm, value2.single_int );
+        break;
+      
+      case Object::Type::Text:
+        write_text(30,value1.point_norm, except_value1);
+        break;
+      
+      case Object::Type::Border:
+        {
+          //blok.border_solid(&obj);
+          //  its much more simpler to write a huge tower of swicth->case
+          //  rather than do dozsens of functions that overcomplicate a 
+          //  regular state machine like this one.
+          
+          auto& point1 = obj.ObjectData.at(0).point_norm;
+          auto& size1 = obj.ObjectData.at(1).size_int;
+          point1.x = blok.position.x+DEAFULT_SCREEN_PADDING;
+          point1.y = blok.position.y+DEAFULT_SCREEN_PADDING;
+          size1.x = blok.size.x;
+          size1.y = blok.size.y-1;
+          draw_rect(value1.point_norm,value2.size_int,FILLER);
+          break;
+        }
+      case Object::Type::Title:
+        {
+          //blok.title(obj.ExceptionalObjectData.at(0), &obj);
+          auto& point1 = obj.ObjectData.at(0).point_norm;
+          auto& chk = obj.ObjectData.at(1).checker;
+          auto& str1 = obj.ExceptionalObjectData.at(0);
+
+          point1.x = blok.position.x + (blok.size.x - str1.size())/2;
+          point1.y = blok.position.y+DEAFULT_SCREEN_PADDING;
+
+          std::cout << "* title pos (" << point1.x << ":" << point1.y << ")\n";
+          write_text(blok.size.x-1,value1.point_norm, except_value1);
+          if (obj.ObjectData.at(1).checker == true) {
+            draw_point(value1.point_norm, FILLED_PIXEL);
+            draw_point({value1.point_norm.x+(uint)except_value1.size()-1, value1.point_norm.y}, FILLED_PIXEL);
+          }
+          break;
+        }
+      
+      case Object::Type::List:
+        // blok.list(except_value, &obj);
+        {
+          auto& point1 = obj.ObjectData.at(0).point_norm;
+          auto& spacing = obj.ObjectData.at(1).size_single;
+          point1.x = blok.position.x + (DEAFULT_SCREEN_PADDING)*2;
+          point1.y = blok.position.y + (DEAFULT_SCREEN_PADDING)+1;
+          uint cordinate = point1.y;
+          std::cout << "( point ) : " << value1.point_norm.x << " : " << value1.point_norm.y << "\n"; 
+          for(uint l=1; l <= except_value.size(); l++) {
+            uint padding = ((float)except_value.at(l-1).size() / (blok.size.x - DEAFULT_SCREEN_PADDING*4));
+            std::cout << "(padding) : " << padding << "\n"; 
+            if(l > 1) 
+            {
+              point constructed_point = {
+                point1.x, 
+                cordinate = cordinate + round((float)l/2) + padding
+                //(point1.y * l)  + padding
+              };
+              // i may be just dump, but ill live with that
+              write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, except_value.at(l-1));
+            } 
+            else 
+            {
+               point constructed_point = {
+                 value1.point_norm.x,
+                 value1.point_norm.y 
+               };
+               write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, except_value.at(l-1));
+               cordinate = cordinate + padding;
+            }
+          }
+          break;
+        }
+      case Object::Type::FancyBorder:
+        { 
+          //blok.border_solid(&obj);
+          auto& point1 = obj.ObjectData.at(0).point_norm;
+          auto& size1 = obj.ObjectData.at(1).size_int;
+          point1.x = blok.position.x+DEAFULT_SCREEN_PADDING;
+          point1.y = blok.position.y+DEAFULT_SCREEN_PADDING;
+          size1.x = blok.size.x;
+          size1.y = blok.size.y-1;
+
+          draw_rect(value1.point_norm,value2.size_int, FANCYBORDER);
+          break;
+        }
+      case Object::Type::Nothing:
+        break;
+    }
   }
 
-  void Block::list(std::vector<std::string> elements, Object *target) 
-  {
-    auto& point1 = target->ObjectData.at(0).point_norm;
-    auto& spacing = target->ObjectData.at(1).size_single;
-    point1.x = position.x + (DEAFULT_SCREEN_PADDING+2);
-    point1.y = position.y + (DEAFULT_SCREEN_PADDING+2);
-  }
 
   void Screen::flush()
   {
     std::cout << "\n flush called \n";
     auto target = ValuesMap;
-    pixel FILLER[6] = {FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL};
-    pixel FANCYBORDER[6] = {HORIZ_BORDER_PIXEL,VERT_BORDER_PIXEL,TOPLEFT_BORDER_PIXEL,TOPRIGHT_BORDER_PIXEL,BOTRIGHT_BORDER_PIXEL, BOTLEFT_BORDER_PIXEL} ;
-  
+   
     for (uint blocks = 0; blocks < BlockList.size(); blocks++) {
       auto List = BlockList.at(blocks).ObjectList;
       auto& blok = BlockList.at(blocks); 
       for (uint i = 0; i < List.size(); i++) 
       {
         auto obj = List.at(i);
-        auto& chk = obj.ObjectData.at(1);
-        auto& value1 = obj.ObjectData.at(0);
-        auto& value2 = obj.ObjectData.at(1);
-        auto& except_value = obj.ExceptionalObjectData;
-        auto& except_value1 = obj.ExceptionalObjectData.at(0);
-        
-        switch (obj.type) {
-          case Object::Type::Point:
-            ValuesMap.at(value1.point_norm.x, value1.point_norm.y);
-            break;
-          case Object::Type::Line:
-            draw_line(value1.point_norm, value2.point_norm );
-            break;
-          case Object::Type::Rect:
-            draw_rect(value1.point_norm,value2.size_int, FILLER);
-            break;
-          case Object::Type::Circle:
-            draw_circle(value1.point_norm, value2.single_int );
-            break;
-          case Object::Type::Text:
-            write_text(value1.point_norm, except_value1);
-            /* to do */
-            break;
-          case Object::Type::Border:
-            blok.border_solid(&obj);
-            draw_rect(value1.point_norm,value2.size_int,FILLER);
-            break;
-          case Object::Type::Title:
-            blok.title(obj.ExceptionalObjectData.at(0), &obj);
-            write_text(value1.point_norm, except_value1);
-            if (chk.checker == true) {
-              draw_point(value1.point_norm, FILLED_PIXEL);
-              draw_point({value1.point_norm.x+(uint)except_value1.size()-1, value1.point_norm.y}, FILLED_PIXEL);
-            }
-            break;
-          case Object::Type::List:
-            blok.list(except_value, &obj);
-            for(size_t l=0; l < except_value.size(); l++) {
-              if(l > 0) { 
-                write_text({value1.point_norm.x, value1.point_norm.y+(uint)value2.size_single*(uint)l}, except_value.at(l));
-              } else { 
-                write_text({value1.point_norm.x, value1.point_norm.y}, except_value.at(l));
-              }
-            }
-            break;
-          case Object::Type::FancyBorder:
-            blok.border_solid(&obj);
-            draw_rect(value1.point_norm,value2.size_int, FANCYBORDER);
-            break;
-          case Object::Type::Nothing:
-            break;
-        }
+        handler(obj, blok);
       }
     }
   }
