@@ -133,16 +133,16 @@ namespace cluir
     return  this;
   }
 
-  Screen *Screen::write_text(point origin,std::string text, canvas *target) 
+  Screen *Screen::write_text(point origin,std::string text) 
   {
     for(uint lenth=0; lenth < text.size(); lenth++) 
     {
-      target->at(origin.x+lenth, origin.y) = text.at(lenth); 
+      ValuesMap.at(origin.x+lenth, origin.y) = text.at(lenth); 
     } 
     return this;
   }
 
-  Screen *Screen::draw_line(point begin, point end, canvas *target ) {
+  Screen *Screen::draw_line(point begin, point end ) {
     std::cout << "draw call  : draw_pixel -> " << pixel_to_draw << "\n";
     int difference_x = (end.x - begin.x);
     int difference_y = (end.y - begin.y);
@@ -152,13 +152,13 @@ namespace cluir
 
     if(integrety_check({end.x,end.y})) 
     {
-      target->at(end.x, end.y) = pixel_to_draw;
+      ValuesMap.at(end.x, end.y) = pixel_to_draw;
     }
     while(begin.x != end.x || begin.y != end.y) 
     {
       if(integrety_check({begin.x, begin.y})) 
       {
-        target->at(begin.x, begin.y) = pixel_to_draw;
+        ValuesMap.at(begin.x, begin.y) = pixel_to_draw;
       }
       int bias_after = change_bias * 2;
       if (bias_after > -difference_y) 
@@ -176,7 +176,7 @@ namespace cluir
   }
 
   
-  Screen *Screen::draw_line_percents(vec2<percent> begin, vec2<percent> end, canvas *target ) {
+  Screen *Screen::draw_line_percents(vec2<percent> begin, vec2<percent> end ) {
     std::cout << "draw call  : draw_pixel -> " << pixel_to_draw << "\n";
     point real_begin = get_real_from_percents( get_screen_size() ,  begin);
     point real_end = get_real_from_percents( get_screen_size() ,  end);
@@ -188,12 +188,12 @@ namespace cluir
     int change_bias = difference_x - difference_y;
 
     if(integrety_check({real_end.x,real_end.y})) {
-      target->at(real_end.x, real_end.y) = pixel_to_draw;
+      ValuesMap.at(real_end.x, real_end.y) = pixel_to_draw;
     }
     while(real_begin.x != real_end.x || real_begin.y != real_end.y) 
     {
       if(integrety_check({real_end.x,real_end.y})) {
-        target->at(real_begin.x, real_begin.y) = pixel_to_draw;
+        ValuesMap.at(real_begin.x, real_begin.y) = pixel_to_draw;
       }
       int bias_after = change_bias * 2;
       if (bias_after > -difference_y) 
@@ -237,7 +237,7 @@ namespace cluir
   }
 */
 
-  Screen *Screen::draw_circle(point center, uint radius, canvas *target ) {
+  Screen *Screen::draw_circle(point center, uint radius) {
     rectangle render_area = {
       .x = radius * 2,
       .y = radius * 2
@@ -251,14 +251,14 @@ namespace cluir
     for (uint ypos = area_root.y; ypos < render_area.y + area_root.y; ypos++) 
     { for (uint xpos = area_root.x; xpos < render_area.x + area_root.x; xpos++) 
       { if (std::pow(radius, 2) < ( std::pow(xpos,2) + std::pow(ypos,2)) ) {
-           target->at(xpos,ypos) = FILLED_PIXEL;
+           ValuesMap.at(xpos,ypos) = FILLED_PIXEL;
          }
       }
     }
     return  this;
   }
 
-  Screen *Screen::draw_rect(point top_left_position, vec2<int> size, canvas *target ) {
+  Screen *Screen::draw_rect(point top_left_position, vec2<int> size) {
     uint
       end_x, begin_x,
       end_y, begin_y
@@ -289,33 +289,33 @@ namespace cluir
     }
     for(uint horizontal=begin_x; horizontal < end_x; horizontal++) 
     {
-      target->at(horizontal, begin_y) = FILLED_PIXEL;
-      target->at(horizontal, end_y-1) = FILLED_PIXEL;
+      ValuesMap.at(horizontal, begin_y) = FILLED_PIXEL;
+      ValuesMap.at(horizontal, end_y-1) = FILLED_PIXEL;
     }
     for(uint vertical=begin_y; vertical < end_y; vertical++) 
     {
-      target->at(begin_x, vertical) = FILLED_PIXEL;
-      target->at(end_x-1, vertical) = FILLED_PIXEL;
+      ValuesMap.at(begin_x, vertical) = FILLED_PIXEL;
+      ValuesMap.at(end_x-1, vertical) = FILLED_PIXEL;
     }
     return this;
   }
 
 
 
-  Screen *Screen::draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size, canvas *target) {
+  Screen *Screen::draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size) {
     
     vec2<uint> real_top_left_position = get_real_from_percents(screen_size, top_left_position);
     vec2<uint> real_size = get_real_from_percents(screen_size, size);
     
     for(uint horizontal=real_top_left_position.x; horizontal < real_top_left_position.x+real_size.x; horizontal++) 
     {
-      target->at(horizontal, real_top_left_position.y) = 2;
-      target->at(horizontal, real_top_left_position.y+real_size.y-1) = 2;
+      ValuesMap.at(horizontal, real_top_left_position.y) = 2;
+      ValuesMap.at(horizontal, real_top_left_position.y+real_size.y-1) = 2;
     }
     for(uint vertical=real_top_left_position.y; vertical < real_top_left_position.y+real_size.y; vertical++) 
     {
-      target->at(real_top_left_position.x, vertical) = 2;
-      target->at(real_top_left_position.x+real_size.x-1, vertical) = 2;
+      ValuesMap.at(real_top_left_position.x, vertical) = 2;
+      ValuesMap.at(real_top_left_position.x+real_size.x-1, vertical) = 2;
     }
     return this;
   }
@@ -416,7 +416,7 @@ namespace cluir
 //
 //
 
-  Block *Block::Use_Border() {
+  Block *Block::UseSolidBorder() {
     Object border;
     border.type = border.Border;
     MapBlock({border});
@@ -448,7 +448,7 @@ namespace cluir
     }
   }
 
-  void Block::border(Object *target) 
+  void Block::border_solid(Object *target) 
   {
     auto& point1 = target->ObjectData.at(0).point_norm;
     auto& size1 = target->ObjectData.at(1).size_int;
@@ -490,26 +490,25 @@ namespace cluir
             ValuesMap.at(value1.point_norm.x, value1.point_norm.y);
             break;
           case Object::Type::Line:
-            uslessScreen.draw_line
-              (value1.point_norm, value2.point_norm , &ValuesMap);
+            draw_line(value1.point_norm, value2.point_norm );
             break;
           case Object::Type::Rect:
-            uslessScreen.draw_rect(value1.point_norm,value2.size_int, &ValuesMap);
+            draw_rect(value1.point_norm,value2.size_int );
             break;
           case Object::Type::Circle:
-            uslessScreen.draw_circle(value1.point_norm, value2.single_int, &ValuesMap);
+            draw_circle(value1.point_norm, value2.single_int );
             break;
           case Object::Type::Text:
-            uslessScreen.write_text(value1.point_norm, except_value1, &ValuesMap);
+            write_text(value1.point_norm, except_value1);
             /* to do */
             break;
           case Object::Type::Border:
-            blok.border(&obj);
-            uslessScreen.draw_rect(value1.point_norm,value2.size_int, &ValuesMap);
+            blok.border_solid(&obj);
+            draw_rect(value1.point_norm,value2.size_int );
             break;
           case Object::Type::Title:
             blok.title(obj.ExceptionalObjectData.at(0), &obj);
-            uslessScreen.write_text(value1.point_norm, except_value1, &ValuesMap);
+            write_text(value1.point_norm, except_value1);
           case Object::Type::Nothing:
             break;
         }

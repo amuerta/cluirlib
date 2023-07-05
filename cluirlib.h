@@ -143,9 +143,9 @@ namespace cluir {
     std::vector<Object> ObjectList;
 
     private:void MapBlock(std::vector<Object> elements);
-    public:void border(Object *target);
+    public:void border_solid(Object *target);
     public:void title(std::string label, Object *target);
-    public:Block *Use_Border();
+    public:Block *UseSolidBorder();
     public:Block *Add_Title(std::string label);
 
   };
@@ -188,12 +188,12 @@ namespace cluir {
     public:Screen fill_empty();
     public:Screen *set_drawing_pixel(pixel type);
     public:
-     Screen *write_text(point origin,std::string text, canvas *target);
-     Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, canvas *target);
-     Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size, canvas *target);
-     Screen *draw_line(point begin, point end, canvas *target);
-     Screen *draw_line_percents(vec2<percent> begin, vec2<percent> end, canvas *target);
-     Screen *draw_circle(point center, uint radius, canvas *target);
+     Screen *write_text(point origin,std::string text);
+     Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size);
+     Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size);
+     Screen *draw_line(point begin, point end);
+     Screen *draw_line_percents(vec2<percent> begin, vec2<percent> end);
+     Screen *draw_circle(point center, uint radius);
     public:Screen *add_blocks(std::vector<Block> blk);
     public:Screen *block_alignment(BlockAlignment Type);
     public:Screen *remove_block_byId(uint BlockId);
