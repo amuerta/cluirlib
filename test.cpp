@@ -1,5 +1,6 @@
 #include "cluirlib.cpp"
 #include <iostream>
+#include <string>
 
 
 int main ()
@@ -9,18 +10,23 @@ int main ()
    auto drawer = cluir::NewRenderEngine();
    auto SCR = cluir::NewScreen();
 
-   
+
    auto blk2 = cluir::NewBlock(cluir::Block::BlockT::Void);
    auto blk = cluir::NewBlock(cluir::Block::BlockT::Void);
-   blk.UseSolidBorder()->Add_Title(" Another Title ");
-   blk2.Add_Title(" Test ");
-   SCR.add_blocks({ blk, blk2, blk })->block_alignment(cluir::BlockAlignment::Horizontal_Tiled);
-   SCR.flush(); 
-   //SCR.draw_rect({15,15}, {8,5}); 
-   //SCR.set_drawing_pixel(FILLED_PIXEL)
-   //   ->draw_line_percents({10,5}, {10,85},&SCR.ValuesMap);
   
-      
+   blk.UseFancyBorder()
+      ->Add_Title(" Neat ")
+      ->CreateList({
+            " * Now i can do vodoo magic",
+            " * Render text to a screen in list manner ",
+            " TODO: literally anything else"," [?] cool ?", 
+            " [!] yes."}
+            ,2);
+
+   SCR.add_blocks({ blk, blk2, blk2 })->block_alignment(cluir::BlockAlignment::Horizontal_Tiled);
+   SCR.flush(); 
+
+
 
    auto frame = drawer.BuildFrame(SCR);
    drawer.render(frame);

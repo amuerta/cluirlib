@@ -54,7 +54,7 @@ Dynamic2DArray {
 };
 
 
-#define DEAFULT_OBJECT_BUFFER_SIZE 10
+#define DEAFULT_OBJECT_BUFFER_SIZE 32
 #define DEAFULT_SCREEN_PADDING 1
 
 #define EMPTY_PIXEL 100'0 
@@ -105,6 +105,7 @@ namespace cluir {
       Border,
       FancyBorder,
       Title,
+      List,
       Nothing,
     } type;
    
@@ -113,14 +114,17 @@ namespace cluir {
       vec2<uint> size_uint;
       point point_norm;
       int single_int;
+      uint single_uint;
+      size_t size_single;
       char single_char;
+      bool checker;
    };
    std::vector<variying_data> ObjectData;
    std::vector<std::string> ExceptionalObjectData;
    // i really dont like std::variant<T> 
    Object() {
      ObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE);
-     ExceptionalObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE);
+     ExceptionalObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE*4);
    }
   };
  
@@ -148,6 +152,8 @@ namespace cluir {
     private:void MapBlock(std::vector<Object> elements);
     public:void border_solid(Object *target);
     public:void title(std::string label, Object *target);
+    public:void list(std::vector<std::string> elements, Object *target);
+    public:Block *CreateList(std::vector<std::string> list, size_t spacing);
     public:Block *UseFancyBorder();
     public:Block *UseSolidBorder();
     public:Block *Add_Title(std::string label);
@@ -194,6 +200,7 @@ namespace cluir {
     public:Screen *set_drawing_pixel(pixel type);
     public:
      Screen *write_text(point origin,std::string text);
+     Screen *draw_point(point p, pixel pix);
      Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, pixel line_types[6]);
      Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size);
      Screen *draw_line(point begin, point end);

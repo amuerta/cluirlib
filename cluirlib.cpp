@@ -11,8 +11,10 @@
 //      - C.M. Current solution is about creating a border out 
 //      of 1 char to each side of terminal window
 //
-//
-
+//    * move implementations of different functions to switch(obj) and 
+//    the entire statement to saparated function! to tower it!
+//     
+//    *fix alignment for Objects, make them reserve space? 
 
 
 template<typename T>
@@ -131,6 +133,13 @@ namespace cluir
     pixel_to_draw = type;
     std::cout << pixel_to_draw << " <- pixel \n";
     return  this;
+  }
+
+
+  Screen *Screen::draw_point(point p, pixel pix) 
+  {
+    ValuesMap.at(p.x, p.y) = pix;
+    return this;
   }
 
   Screen *Screen::write_text(point origin,std::string text) 
@@ -306,9 +315,9 @@ namespace cluir
     }
 
     ValuesMap.at(top_left_position.x, top_left_position.y) = top_left_corner;
-    ValuesMap.at(top_left_position.x+size.x, top_left_position.y) = top_right_corner;
-    ValuesMap.at(top_left_position.x+size.x, top_left_position.y+size.y) = bottom_right_corner;
-    ValuesMap.at(top_left_position.x, top_left_position.y+size.y) = bottom_left_corner;
+    ValuesMap.at(top_left_position.x+size.x-1, top_left_position.y) = top_right_corner;
+    ValuesMap.at(top_left_position.x+size.x-1, top_left_position.y+size.y-1) = bottom_right_corner;
+    ValuesMap.at(top_left_position.x, top_left_position.y+size.y-1) = bottom_left_corner;
 
     return this;
   }
@@ -365,17 +374,17 @@ namespace cluir
       case FILLED_PIXEL:
         return "█";
       case HORIZ_BORDER_PIXEL:
-        return "🬋";
+        return "═";
       case VERT_BORDER_PIXEL:
-        return "█";
+        return "║";
       case TOPLEFT_BORDER_PIXEL:
-        return "🬇";
+        return "╔";
       case TOPRIGHT_BORDER_PIXEL:
-        return "🬏";
+        return "╗";
       case BOTRIGHT_BORDER_PIXEL:
-        return "";
+        return "╝";
       case BOTLEFT_BORDER_PIXEL:
-        return "";
+        return "╚";
       case 0 ... 255:  // ASCII 
         {
           std::string s(1,char(pixel));
@@ -438,6 +447,13 @@ namespace cluir
 //
 //
 
+  Block *Block::UseFancyBorder() {
+    Object border;
+    border.type = border.FancyBorder;
+    MapBlock({border});
+    return this;
+  }
+
   Block *Block::UseSolidBorder() {
     Object border;
     border.type = border.Border;
@@ -448,12 +464,32 @@ namespace cluir
   Block *Block::Add_Title(std::string label) {
     Object title;
     title.type = title.Title;
-    title.ExceptionalObjectData.at(0) = label;
+    title.ExceptionalObjectData.at(0) =  label ;
+    for(size_t i = 0; i < ObjectList.size(); i++ ) 
+    {
+      if (ObjectList.at(i).type == Object::Type::FancyBorder) {
+        title.ExceptionalObjectData.at(0) = " " + label + " ";
+        title.ObjectData.at(1).checker = true;
+        break; 
+      }
+    }
     std::cout << "title obj = " << title.ExceptionalObjectData.at(0) << "\n";
     MapBlock({title});
     return this;
   }
 
+  Block *Block::CreateList(std::vector<std::string> list, size_t spacing_multiplier) {
+    Object l;
+    l.type = l.List;
+    l.ObjectData.at(1).size_single = spacing_multiplier;
+    for (size_t lines = 0; lines < list.size(); lines++) 
+    {
+      l.ExceptionalObjectData.at(lines) = list.at(lines);
+    }
+
+    MapBlock({l});
+    return this;
+  }
 
 //
 //
@@ -480,14 +516,25 @@ namespace cluir
     size1.y = size.y-1;
   }
 
+
   void Block::title(std::string label, Object *target) {
     auto& point1 = target->ObjectData.at(0).point_norm;
+    auto& chk = target->ObjectData.at(1).checker;
     auto& str1 = target->ExceptionalObjectData.at(0);
+    
     point1.x = position.x + (size.x - str1.size())/2;
     point1.y = position.y+DEAFULT_SCREEN_PADDING;
+    
     std::cout << "* title pos (" << point1.x << ":" << point1.y << ")\n";
   }
 
+  void Block::list(std::vector<std::string> elements, Object *target) 
+  {
+    auto& point1 = target->ObjectData.at(0).point_norm;
+    auto& spacing = target->ObjectData.at(1).size_single;
+    point1.x = position.x + (DEAFULT_SCREEN_PADDING+2);
+    point1.y = position.y + (DEAFULT_SCREEN_PADDING+2);
+  }
 
   void Screen::flush()
   {
@@ -502,8 +549,10 @@ namespace cluir
       for (uint i = 0; i < List.size(); i++) 
       {
         auto obj = List.at(i);
+        auto& chk = obj.ObjectData.at(1);
         auto& value1 = obj.ObjectData.at(0);
         auto& value2 = obj.ObjectData.at(1);
+        auto& except_value = obj.ExceptionalObjectData;
         auto& except_value1 = obj.ExceptionalObjectData.at(0);
         
         switch (obj.type) {
@@ -530,10 +579,23 @@ namespace cluir
           case Object::Type::Title:
             blok.title(obj.ExceptionalObjectData.at(0), &obj);
             write_text(value1.point_norm, except_value1);
+            if (chk.checker == true) {
+              draw_point(value1.point_norm, FILLED_PIXEL);
+              draw_point({value1.point_norm.x+(uint)except_value1.size()-1, value1.point_norm.y}, FILLED_PIXEL);
+            }
+            break;
+          case Object::Type::List:
+            blok.list(except_value, &obj);
+            for(size_t l=0; l < except_value.size(); l++) {
+              if(l > 0) { 
+                write_text({value1.point_norm.x, value1.point_norm.y+(uint)value2.size_single*(uint)l}, except_value.at(l));
+              } else { 
+                write_text({value1.point_norm.x, value1.point_norm.y}, except_value.at(l));
+              }
+            }
             break;
           case Object::Type::FancyBorder:
             blok.border_solid(&obj);
-
             draw_rect(value1.point_norm,value2.size_int, FANCYBORDER);
             break;
           case Object::Type::Nothing:
