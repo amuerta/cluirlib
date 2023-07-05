@@ -258,7 +258,14 @@ namespace cluir
     return  this;
   }
 
-  Screen *Screen::draw_rect(point top_left_position, vec2<int> size) {
+  Screen *Screen::draw_rect(point top_left_position, vec2<int> size, pixel line_types[6]) {
+    const pixel horizontal_line = line_types[0];
+    const pixel vertical_line = line_types[1];
+    const pixel top_left_corner = line_types[2];
+    const pixel top_right_corner = line_types[3];
+    const pixel bottom_right_corner = line_types[4];
+    const pixel bottom_left_corner = line_types[5];
+    
     uint
       end_x, begin_x,
       end_y, begin_y
@@ -289,14 +296,20 @@ namespace cluir
     }
     for(uint horizontal=begin_x; horizontal < end_x; horizontal++) 
     {
-      ValuesMap.at(horizontal, begin_y) = FILLED_PIXEL;
-      ValuesMap.at(horizontal, end_y-1) = FILLED_PIXEL;
+      ValuesMap.at(horizontal, begin_y) = horizontal_line;
+      ValuesMap.at(horizontal, end_y-1) = horizontal_line;
     }
     for(uint vertical=begin_y; vertical < end_y; vertical++) 
     {
-      ValuesMap.at(begin_x, vertical) = FILLED_PIXEL;
-      ValuesMap.at(end_x-1, vertical) = FILLED_PIXEL;
+      ValuesMap.at(begin_x, vertical) = vertical_line;
+      ValuesMap.at(end_x-1, vertical) = vertical_line;
     }
+
+    ValuesMap.at(top_left_position.x, top_left_position.y) = top_left_corner;
+    ValuesMap.at(top_left_position.x+size.x, top_left_position.y) = top_right_corner;
+    ValuesMap.at(top_left_position.x+size.x, top_left_position.y+size.y) = bottom_right_corner;
+    ValuesMap.at(top_left_position.x, top_left_position.y+size.y) = bottom_left_corner;
+
     return this;
   }
 
@@ -351,16 +364,25 @@ namespace cluir
         return "🮐";
       case FILLED_PIXEL:
         return "█";
-      case 32:
-      case 65 ... 122: 
+      case HORIZ_BORDER_PIXEL:
+        return "🬋";
+      case VERT_BORDER_PIXEL:
+        return "█";
+      case TOPLEFT_BORDER_PIXEL:
+        return "🬇";
+      case TOPRIGHT_BORDER_PIXEL:
+        return "🬏";
+      case BOTRIGHT_BORDER_PIXEL:
+        return "";
+      case BOTLEFT_BORDER_PIXEL:
+        return "";
+      case 0 ... 255:  // ASCII 
         {
           std::string s(1,char(pixel));
           return s;
         }
-        break;
       default: 
         return "E";
-        break;
     }
   }
 
@@ -471,7 +493,9 @@ namespace cluir
   {
     std::cout << "\n flush called \n";
     auto target = ValuesMap;
-
+    pixel FILLER[6] = {FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL};
+    pixel FANCYBORDER[6] = {HORIZ_BORDER_PIXEL,VERT_BORDER_PIXEL,TOPLEFT_BORDER_PIXEL,TOPRIGHT_BORDER_PIXEL,BOTRIGHT_BORDER_PIXEL, BOTLEFT_BORDER_PIXEL} ;
+  
     for (uint blocks = 0; blocks < BlockList.size(); blocks++) {
       auto List = BlockList.at(blocks).ObjectList;
       auto& blok = BlockList.at(blocks); 
@@ -481,10 +505,7 @@ namespace cluir
         auto& value1 = obj.ObjectData.at(0);
         auto& value2 = obj.ObjectData.at(1);
         auto& except_value1 = obj.ExceptionalObjectData.at(0);
-        Screen uslessScreen;
-        uslessScreen.set_drawing_pixel(FILLED_PIXEL);
         
-
         switch (obj.type) {
           case Object::Type::Point:
             ValuesMap.at(value1.point_norm.x, value1.point_norm.y);
@@ -493,7 +514,7 @@ namespace cluir
             draw_line(value1.point_norm, value2.point_norm );
             break;
           case Object::Type::Rect:
-            draw_rect(value1.point_norm,value2.size_int );
+            draw_rect(value1.point_norm,value2.size_int, FILLER);
             break;
           case Object::Type::Circle:
             draw_circle(value1.point_norm, value2.single_int );
@@ -504,15 +525,20 @@ namespace cluir
             break;
           case Object::Type::Border:
             blok.border_solid(&obj);
-            draw_rect(value1.point_norm,value2.size_int );
+            draw_rect(value1.point_norm,value2.size_int,FILLER);
             break;
           case Object::Type::Title:
             blok.title(obj.ExceptionalObjectData.at(0), &obj);
             write_text(value1.point_norm, except_value1);
+            break;
+          case Object::Type::FancyBorder:
+            blok.border_solid(&obj);
+
+            draw_rect(value1.point_norm,value2.size_int, FANCYBORDER);
+            break;
           case Object::Type::Nothing:
             break;
         }
-
       }
     }
   }

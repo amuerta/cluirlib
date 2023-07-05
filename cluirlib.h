@@ -62,10 +62,12 @@ Dynamic2DArray {
 #define FILLED_PIXEL 100'2
 
 #define JUNCTION_BORDER 100'20
-#define TOP_BORDER_PIXEL 100'21
-#define BOTTOM_BORDER_PIXEL 100'22
-#define LEFT_BORDER_PIXEL 100'23 
-#define RIGHT_BORDER_PIXEL 100'24
+#define HORIZ_BORDER_PIXEL 100'21
+#define VERT_BORDER_PIXEL 100'22 
+#define TOPLEFT_BORDER_PIXEL 100'23
+#define TOPRIGHT_BORDER_PIXEL 100'24
+#define BOTRIGHT_BORDER_PIXEL 100'25
+#define BOTLEFT_BORDER_PIXEL 100'26
 
 //
 // Cluir structure initialization
@@ -101,6 +103,7 @@ namespace cluir {
       Circle,
       Text,
       Border,
+      FancyBorder,
       Title,
       Nothing,
     } type;
@@ -145,6 +148,7 @@ namespace cluir {
     private:void MapBlock(std::vector<Object> elements);
     public:void border_solid(Object *target);
     public:void title(std::string label, Object *target);
+    public:Block *UseFancyBorder();
     public:Block *UseSolidBorder();
     public:Block *Add_Title(std::string label);
 
@@ -174,6 +178,7 @@ namespace cluir {
   struct Screen {
     
     pixel pixel_to_draw;
+
     vec2<uint> screen_size;
     std::vector<Block> BlockList;
     Dynamic2DArray<pixel> ValuesMap;
@@ -189,7 +194,7 @@ namespace cluir {
     public:Screen *set_drawing_pixel(pixel type);
     public:
      Screen *write_text(point origin,std::string text);
-     Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size);
+     Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, pixel line_types[6]);
      Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size);
      Screen *draw_line(point begin, point end);
      Screen *draw_line_percents(vec2<percent> begin, vec2<percent> end);
