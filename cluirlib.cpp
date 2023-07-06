@@ -615,28 +615,20 @@ namespace cluir
           point1.x = blok.position.x + (DEAFULT_SCREEN_PADDING)*2;
           point1.y = blok.position.y + (DEAFULT_SCREEN_PADDING)+1;
           uint cordinate = point1.y;
+          uint padding = 0;
           std::cout << "( point ) : " << value1.point_norm.x << " : " << value1.point_norm.y << "\n"; 
-          for(uint l=1; l <= except_value.size(); l++) {
-            uint padding = ((float)except_value.at(l-1).size() / (blok.size.x - DEAFULT_SCREEN_PADDING*4));
+          for(uint l=0; l < except_value.size(); l++) {
+            padding = ((float)except_value.at(l).size() / (blok.size.x - DEAFULT_SCREEN_PADDING*4));
             std::cout << "(padding) : " << padding << "\n"; 
-            if(l > 1) 
             {
               point constructed_point = {
                 point1.x, 
-                cordinate = cordinate + round((float)l/2) + padding
-                //(point1.y * l)  + padding
+                //cordinate = cordinate + round((float)l/2) + padding
+                cordinate + l 
               };
               // i may be just dump, but ill live with that
-              write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, except_value.at(l-1));
-            } 
-            else 
-            {
-               point constructed_point = {
-                 value1.point_norm.x,
-                 value1.point_norm.y 
-               };
-               write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, except_value.at(l-1));
-               cordinate = cordinate + padding;
+              write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, except_value.at(l));
+              cordinate = cordinate + padding;
             }
           }
           break;
