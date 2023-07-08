@@ -1,7 +1,4 @@
 #include "cluirlib.h"
-#include <string>
-#include <unistd.h>
-#include <vector>
 
 //
 //
@@ -11,11 +8,29 @@
 //      - C.M. Current solution is about creating a border out 
 //      of 1 char to each side of terminal window
 //
-//    * move implementations of different functions to switch(obj) and 
+//    +- move implementations of different functions to switch(obj) and 
 //    the entire statement to saparated function! to tower it!
 //     
 //    *fix alignment for Objects, make them reserve space? 
 
+
+// TODO : event system < - > data manager < - > screen
+// TODO : dynamic text and lists
+// TODO : keypresses server -> event server
+// TODO : fix tiled mode 
+// TODO : percentage scaling func
+// TODO : Color support
+// TODO : Renderer settings // custom ui symbols
+// TODO : function calls upon pressing buttonz
+// TODO : Track System for DataManager + screen->block->object id finding
+// TODO ! Dynamic Object swaping
+// TODO ! Dynamic Block swaping
+// TODO ! repaint , invert , other color methods
+// TODO ! fill functions (methods)
+// TODO ! DataManager global timer
+// TODO ? DataManager server
+// TODO : focus / back / terminate / close event calls
+// TODO : Create predefined blocks = { List, ScrollList , ScrollMenu , Menu , Grid , Canvas , Graph , TowerGraph , Panel, PopUp }
 
 template<typename T>
 uint Dynamic2DArray<T>::size_x() {
@@ -127,6 +142,46 @@ namespace cluir
       };
     } 
   }
+
+  void Screen::tiled_align() {
+    uint root_y=0;
+    uint root_x=0;
+    uint size_x=0;
+    uint size_y=0;
+
+    //if (BlockList.size() % 2) {
+      
+      for (uint block = 0; block < BlockList.size(); block++) 
+      {
+        size_x = screen_size.x / (BlockList.size() - 1) - 1;
+
+        if (block % 2) size_y = screen_size.y / 2 - 1;
+        else size_y = screen_size.y / 2 - 1;
+
+        if (block % 2) root_y = size_y  - 1;
+        else root_y = 0;
+
+        if (block % 2) root_x = size_x * block;
+        else root_x = root_x;
+
+
+
+      BlockList.at(block).size = {
+        .x = size_x,
+        .y = size_y
+      };
+      
+      BlockList.at(block).position = {
+        .x = root_x,
+        .y = root_y
+      };
+
+      }
+    //}
+  }
+
+  
+
 
   Screen *Screen::set_drawing_pixel(pixel type) 
   {
@@ -377,12 +432,17 @@ namespace cluir
       {
         horizontal_tiled_align();
       } break;
+
+      case BlockAlignment::Tiled:
+      {
+        tiled_align();
+      } break;
     }
 
     return this;
   }
 
- 
+
 
   image_piece Renderer::convert_raw_pixel(uint pixel) {
     switch (pixel) {
@@ -458,6 +518,7 @@ namespace cluir
     scr.scale(100,100);
     scr.fill_empty();
     std::cout << "\nscreen created\n";
+    std::cout << "scr.size.x = " << scr.screen_size.x << " | scr.size.y = " << scr.screen_size.y << " \n"; 
     return scr;
   }
 
@@ -729,11 +790,30 @@ namespace cluir
       }
     }
     std::cout << "\e[25m";
-    
-  
-
   }
 
+
+  InputManager *InputManager::SetKeys(key_binds k) {
+    Keys = k;
+    return this;
+  }
+
+  void InputManager::WaitForEvent() {
+    while (true) {
+      char input = readkey();
+      if (input > 0) {
+        auto dummy = NewRenderEngine();
+        dummy.finish();
+        break;
+      } 
+    }
+  }
+
+
+  InputManager NewInputManager() {
+    InputManager im = {};
+    return  im;
+  }
 
   Renderer Renderer::finish() {
     printf("\e[?25h");

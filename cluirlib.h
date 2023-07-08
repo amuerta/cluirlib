@@ -51,6 +51,11 @@ Dynamic2DArray {
 };
 
 
+#define KEY_ESCAPE 27
+#define KEY_SPACE 32
+
+
+
 #define DEAFULT_OBJECT_BUFFER_SIZE 32
 #define DEAFULT_SCREEN_PADDING 1
 
@@ -78,19 +83,27 @@ namespace cluir {
   typedef vec2<uint> line;
   typedef vec2<uint> rectangle;
   typedef Dynamic2DArray<pixel> canvas; 
- 
+
+  typedef char key;
   
 
   enum event {
+    Back,
     Close,
+    Press,
+    ScrollUp,
+    ScrollDown,
+    ScrollRight,
+    ScrollLeft,
     Terminate,
     Nothing
   };
 
   struct action {
     char key;
-    event job;
+    event evt;
   };
+
 
   struct Object {
     enum Type {
@@ -125,14 +138,15 @@ namespace cluir {
    }
   };
  
-  struct Property {
-    enum Type {
-      borders,
-    } type;
-  };
+  // struct Property {
+  //   enum Type {
+  //     borders,
+  //   } type;
+  // };
 
   enum BlockAlignment {
     Horizontal_Tiled,
+    Tiled
   };
 
   struct Block 
@@ -159,25 +173,6 @@ namespace cluir {
   };
 
 
-  namespace Rules {
-    struct pixelType {
-      enum type {
-        Regular,
-        HorizontalBorder,
-        VerticalBorder,
-        TopLeftCornerBorder,
-        TopRightCornerBorder,
-        BottomLeftCornerBorder,
-        BottomRightCornerBorder,
-      } type;
-      char32_t pixel;
-    };
-    enum updateType {
-      onInput,
-      updatesPS,
-      onEvent
-    };
-  };
 
   struct Screen {
     
@@ -191,7 +186,8 @@ namespace cluir {
     private:bool integrety_check(point cordinate);
     private:vec2<uint> get_screen_size();
     private:void horizontal_tiled_align();
-    
+    private:void tiled_align();
+
     public:Screen scale(uint scaling_factor_x, uint scaling_factor_y);
     public:Screen fill_solid();
     public:Screen fill_empty();
@@ -206,6 +202,7 @@ namespace cluir {
      Screen *draw_circle(point center, uint radius);
     public:Screen *add_blocks(std::vector<Block> blk);
     public:Screen *block_alignment(BlockAlignment Type);
+    // TODO: public:Screen *block_alignment(std::vector<std::vector<uint>> proportions);
     public:Screen *remove_block_byId(uint BlockId);
     public:void handler(Object obj, Block blk);
     public:void flush();
@@ -222,14 +219,34 @@ namespace cluir {
   };
 
   struct InputManager {
+    
+    struct key_binds {
+      char Back;
+      char Close;
+      char Press;
+      char ScrollUpl;
+      char ScrollDown;
+      char ScrollRight;
+      char ScrollLeft;
+      char Terminate;
+      char Nothing;
+    } Keys;
+
+    InputManager *SetKeys(key_binds k);
+    
+    void handle_bind();
     char readkey();
-    std::vector<event> ActionList;
+    std::vector<event> EventJournal;
     event readUserInput();
     void StartInputServer();
+    void WaitForEvent();
   };
-  struct DataManager {};
 
+  struct DataManager {
 
+  };
+  
+  InputManager NewInputManager();
   Screen NewScreen();
   Renderer NewRenderEngine();
   Block NewBlock(Block::BlockT type);
