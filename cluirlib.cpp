@@ -13,24 +13,24 @@
 //     
 //    *fix alignment for Objects, make them reserve space? 
 
-
+// TODO : text file pasrser 
 // TODO : event system < - > data manager < - > screen
 // TODO : dynamic text and lists
 // TODO : keypresses server -> event server
 // TODO : fix tiled mode 
 // TODO : percentage scaling func
-// TODO : Color support
+// TODO : Color support [v]
 // TODO : Renderer settings // custom ui symbols
 // TODO : function calls upon pressing buttonz
 // TODO : Track System for DataManager + screen->block->object id finding
 // TODO ! Dynamic Object swaping
 // TODO ! Dynamic Block swaping
 // TODO ! repaint , invert , other color methods
-// TODO ! fill functions (methods)
+// TODO ! fill shape functions (methods)
 // TODO ! DataManager global timer
 // TODO ? DataManager server
 // TODO : focus / back / terminate / close event calls
-// TODO : Create predefined blocks = { List, ScrollList , ScrollMenu , Menu , Grid , Canvas , Graph , TowerGraph , Panel, PopUp }
+// TODO : Create predefined blocks = { List, ScrollList , ScrollMenu , Menu , Grid , Canvas , Graph , TowerGraph , Panel, PopUp, textfield }
 
 template<typename T>
 uint Dynamic2DArray<T>::size_x() {
@@ -65,6 +65,10 @@ void gotoxy(int x, int y) {printf("\033[%d;%dH", y, x);}
 void cursorOnLineUp() { printf("\033[1A"); }
 void hideCursor()  {std::cout << "\e[?25l";}
 double parse_percents(percent number) { return (double)number / 100; }
+uint RGB(size_t red, size_t green, size_t blue) 
+{
+  return red*1000*1000 + 1000*green + blue;
+}
 
 vec2<uint> get_real_from_percents(vec2<uint> number, vec2<percent> percents) 
 {
@@ -75,6 +79,8 @@ vec2<uint> get_real_from_percents(vec2<uint> number, vec2<percent> percents)
   return real; 
 }
 
+//COLOR_RENDER
+//echo -e "\e[48;2;125;132;243m AAAAAAa"
 
 namespace cluir
 {
@@ -110,7 +116,7 @@ namespace cluir
 
   char InputManager::readkey() 
   {
-    system("stty raw");
+    system("stty raw -echo"); // echo removes echoing of user input
     char ch = getchar(); 
     // terminate when "." is pressed
     system("stty cooked");
@@ -123,6 +129,25 @@ namespace cluir
 // SCREEN FUNCTIONS
 //
 //
+  
+  // color 
+
+  Screen *Screen::SetColorBind(pixel type, color color_id) 
+  {
+    color_rules.push_back({
+        type,
+        color_id,
+    });
+    return this;
+  }
+
+  color Screen::get_color_from_bind(pixel type) 
+  {
+    for(uint i = 0; i < color_rules.size(); i++) {
+      if(color_rules.at(i).type == type) return color_rules.at(i).c;
+    }
+    return COLORS::WHITE;
+  }
 
   void Screen::horizontal_tiled_align() {
     for (uint block_counter = 0; block_counter < BlockList.size(); block_counter++) 
@@ -444,6 +469,15 @@ namespace cluir
 
 
 
+  image_piece Renderer::convert_raw_color(color value) 
+  {
+    color rgb[3];
+    rgb[0] = value / (1000*1000);
+    rgb[1] = (value / 1000) % 1000;
+    rgb[2] = value - value / 1000*1000; 
+    return  "\e[38;2;" + std::to_string(rgb[0]) + ";" + std::to_string(rgb[1]) + ";" + std::to_string(rgb[2]) + "m";
+  }
+  
   image_piece Renderer::convert_raw_pixel(uint pixel) {
     switch (pixel) {
       case EMPTY_PIXEL:
@@ -486,6 +520,7 @@ namespace cluir
     output_size.y = actual_size.y * double_scaling_factor_y;
     
     ValuesMap.reserve(output_size.x, output_size.y);
+    ColorMap.reserve(output_size.x, output_size.y);
 
     screen_size.x = output_size.x;
     screen_size.y = output_size.y-1;
@@ -687,9 +722,8 @@ namespace cluir
                 //cordinate = cordinate + round((float)l/2) + padding
                 cordinate + l 
               };
-              // i may be just dump, but ill live with that
               write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, except_value.at(l));
-              cordinate = cordinate + padding;
+              cordinate = cordinate + padding+ (uint)spacing; 
             }
           }
           break;
@@ -712,6 +746,14 @@ namespace cluir
     }
   }
 
+  void Screen::flush_colors() 
+  {
+    for(uint h = 0 ; h < screen_size.y; h++) {
+      for(uint w = 0; w < screen_size.x; w++) {
+        ColorMap.at(w, h) = get_color_from_bind(ValuesMap.at(w, h));
+      }
+    }
+  }
 
   void Screen::flush()
   {
@@ -727,6 +769,8 @@ namespace cluir
         handler(obj, blok);
       }
     }
+
+    flush_colors();
   }
 
 
@@ -763,7 +807,8 @@ namespace cluir
         else 
         {
           image_piece str_pixel = convert_raw_pixel(scr.ValuesMap.at(x_pos, y_pos));
-          Image.at(x_pos, y_pos) = str_pixel;
+          image_piece str_color = convert_raw_color(scr.ColorMap.at(x_pos, y_pos));
+          Image.at(x_pos, y_pos) = str_color + str_pixel;
         }
       }
     }
@@ -798,10 +843,31 @@ namespace cluir
     return this;
   }
 
-  void InputManager::WaitForEvent() {
+  event InputManager::generate_event_from_key(char key) 
+  {
+    // bypassing switch const limitation
+
+    if(key == Keys.Back) return event::Back;
+    else if(key == Keys.Close) return event::Close;
+    else if(key == Keys.Press) return event::Press;
+    else if(key == Keys.ScrollDown) return event::ScrollDown;
+    else if(key == Keys.ScrollUp) return event::ScrollUp;
+    else if(key == Keys.ScrollLeft) return event::ScrollLeft;
+    else if(key == Keys.ScrollRight) return event::ScrollRight;
+    else if(key == Keys.Terminate) return event::Terminate;
+    else if(key == Keys.Nothing) return event::Nothing;
+    else return event::Nothing;
+  }
+
+  event InputManager::readUserInput ()
+  {
+    return generate_event_from_key(readkey());
+  }
+
+  void InputManager::WaitForAnyEvent() {
     while (true) {
       char input = readkey();
-      if (input > 0) {
+      if (input) {
         auto dummy = NewRenderEngine();
         dummy.finish();
         break;
@@ -812,6 +878,17 @@ namespace cluir
 
   InputManager NewInputManager() {
     InputManager im = {};
+    im.SetKeys({
+        .Back = KEY_ESCAPE,
+        .Close = 'q',
+        .Press = '\n',
+        .ScrollUp = 'w',
+        .ScrollDown = 's',
+        .ScrollRight = 'd',
+        .ScrollLeft = 'a',
+        .Terminate = '`',
+        .Nothing = (char)0
+        });
     return  im;
   }
 

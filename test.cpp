@@ -1,6 +1,4 @@
 #include "cluirlib.cpp"
-#include <iostream>
-#include <string>
 
 int main ()
 {
@@ -11,7 +9,17 @@ int main ()
 
    auto blk2 = cluir::NewBlock(cluir::Block::BlockT::Void);
    auto blk = cluir::NewBlock(cluir::Block::BlockT::Void);
- 
+
+   uint color = 255'255'204;
+
+   SCR.SetColorBind(HORIZ_BORDER_PIXEL,    color )
+      ->SetColorBind(VERT_BORDER_PIXEL,    color )
+      ->SetColorBind(TOPRIGHT_BORDER_PIXEL,color )
+      ->SetColorBind(TOPLEFT_BORDER_PIXEL, color )
+      ->SetColorBind(BOTLEFT_BORDER_PIXEL, color )
+      ->SetColorBind(BOTRIGHT_BORDER_PIXEL,color )
+   ;
+
    blk2.UseFancyBorder();
 
    blk.UseFancyBorder()
@@ -22,15 +30,21 @@ int main ()
             "TODO: literally anything else",
             "[?] cool?", 
             "[!] yes."}
-            ,0);
+            ,1);
 
-   SCR.add_blocks({ blk, blk2, blk, })->block_alignment(cluir::BlockAlignment::Tiled);
+   SCR.add_blocks({ blk, blk2, blk, })->block_alignment(cluir::BlockAlignment::Horizontal_Tiled);
    SCR.flush(); 
+   // SCR.flush_colors();   
    
    auto keymanager = cluir::NewInputManager();
    //keymanager.SetKeys({});
 
    auto frame = drawer.BuildFrame(SCR);
    drawer.render(frame);
-   keymanager.WaitForEvent();
+   keymanager.WaitForAnyEvent();
+ 
+   // if(keymanager.readUserInput()==cluir::event::Terminate)
+      // std::cout << "term";
+   // drawer.finish();
+
 }

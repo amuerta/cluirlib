@@ -4,6 +4,8 @@
 //
 //
 
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -36,7 +38,7 @@ bool expression_with_error(std::string message);
 void cursorOnLineUp();             
 void hideCursor();            
 double parse_percents(percent number);
-
+color RGB(size_t red, size_t green, size_t blue);
 
 template<typename T>
 struct 
@@ -70,6 +72,11 @@ Dynamic2DArray {
 #define TOPRIGHT_BORDER_PIXEL 100'24
 #define BOTRIGHT_BORDER_PIXEL 100'25
 #define BOTLEFT_BORDER_PIXEL 100'26
+
+
+enum COLORS {
+  WHITE = 255'255'255,
+};
 
 //
 // Cluir structure initialization
@@ -183,6 +190,11 @@ namespace cluir {
     Dynamic2DArray<pixel> ValuesMap;
     Dynamic2DArray<color> ColorMap;
 
+    struct color_bind { pixel type; color c; };
+    std::vector<color_bind> color_rules;
+    Screen *SetColorBind(pixel type, color color_id);
+    color get_color_from_bind(pixel type);
+    
     private:bool integrety_check(point cordinate);
     private:vec2<uint> get_screen_size();
     private:void horizontal_tiled_align();
@@ -206,6 +218,7 @@ namespace cluir {
     public:Screen *remove_block_byId(uint BlockId);
     public:void handler(Object obj, Block blk);
     public:void flush();
+    public:void flush_colors();
   };
 
   struct Renderer {
@@ -215,6 +228,7 @@ namespace cluir {
     void render(Dynamic2DArray<image_piece> frame);
     Renderer finish();
     Renderer hold_frame(uint seconds);
+    image_piece convert_raw_color(color value);
     image_piece convert_raw_pixel(uint pixel);
   };
 
@@ -224,22 +238,23 @@ namespace cluir {
       char Back;
       char Close;
       char Press;
-      char ScrollUpl;
+      char ScrollUp;
       char ScrollDown;
       char ScrollRight;
       char ScrollLeft;
       char Terminate;
       char Nothing;
+      
     } Keys;
 
     InputManager *SetKeys(key_binds k);
     
-    void handle_bind();
-    char readkey();
-    std::vector<event> EventJournal;
+    private:event generate_event_from_key(key k);
+    private:char readkey();
+    public:std::vector<event> EventJournal;
     event readUserInput();
     void StartInputServer();
-    void WaitForEvent();
+    void WaitForAnyEvent();
   };
 
   struct DataManager {
