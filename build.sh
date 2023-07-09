@@ -3,4 +3,4 @@
 # build and run if possible
 
 
-  clang++ test.cpp -o test-comp && ./test-comp
+  clang++ test.cpp -o test-comp && ./test-comp -g

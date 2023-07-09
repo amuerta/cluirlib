@@ -123,6 +123,7 @@ namespace cluir {
       FancyBorder,
       Title,
       List,
+      LinkedList,
       Nothing,
     } type;
    
@@ -136,12 +137,15 @@ namespace cluir {
       char single_char;
       bool checker;
    };
+
    std::vector<variying_data> ObjectData;
    std::vector<std::string> ExceptionalObjectData;
+   std::vector<std::string*> PtrData;
    // i really dont like std::variant<T> 
    Object() {
      ObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE);
      ExceptionalObjectData.resize(DEAFULT_OBJECT_BUFFER_SIZE*4);
+     PtrData.resize(DEAFULT_OBJECT_BUFFER_SIZE*4);
    }
   };
  
@@ -173,6 +177,7 @@ namespace cluir {
     public:void title(std::string label, Object *target);
     public:void list(std::vector<std::string> elements, Object *target);
     public:Block *CreateList(std::vector<std::string> list, size_t spacing);
+    public:Block *CreateLinkedList(std::vector<std::string*> ptr_list, size_t spacing);
     public:Block *UseFancyBorder();
     public:Block *UseSolidBorder();
     public:Block *Add_Title(std::string label);

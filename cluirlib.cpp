@@ -594,6 +594,20 @@ namespace cluir
     return this;
   }
 
+
+  Block *Block::CreateLinkedList(std::vector<std::string*> ptr_list, size_t spacing) {
+   Object l;
+    l.type = l.LinkedList;
+    l.ObjectData.at(1).size_single = spacing;
+    l.PtrData.resize(ptr_list.size());
+    for (size_t lines = 0; lines < ptr_list.size(); lines++) 
+    {
+      l.PtrData.at(lines) = ptr_list.at(lines);
+    }
+    MapBlock({l});
+    return this;
+  }
+ 
   Block *Block::CreateList(std::vector<std::string> list, size_t spacing_multiplier) {
     Object l;
     l.type = l.List;
@@ -638,11 +652,13 @@ namespace cluir
 
 
   void Screen::handler(Object obj, Block blok) {
+
     auto& chk = obj.ObjectData.at(1);
     auto& value1 = obj.ObjectData.at(0);
     auto& value2 = obj.ObjectData.at(1);
     auto& except_value = obj.ExceptionalObjectData;
     auto& except_value1 = obj.ExceptionalObjectData.at(0);
+    auto& ptr_value = obj.PtrData;
     pixel FILLER[6] = {FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL,FILLED_PIXEL};
     pixel FANCYBORDER[6] = {HORIZ_BORDER_PIXEL,VERT_BORDER_PIXEL,TOPLEFT_BORDER_PIXEL,TOPRIGHT_BORDER_PIXEL,BOTRIGHT_BORDER_PIXEL, BOTLEFT_BORDER_PIXEL} ;
   
@@ -674,7 +690,6 @@ namespace cluir
           //  its much more simpler to write a huge tower of swicth->case
           //  rather than do dozsens of functions that overcomplicate a 
           //  regular state machine like this one.
-          
           auto& point1 = obj.ObjectData.at(0).point_norm;
           auto& size1 = obj.ObjectData.at(1).size_int;
           point1.x = blok.position.x+DEAFULT_SCREEN_PADDING;
@@ -684,6 +699,7 @@ namespace cluir
           draw_rect(value1.point_norm,value2.size_int,FILLER);
           break;
         }
+
       case Object::Type::Title:
         {
           //blok.title(obj.ExceptionalObjectData.at(0), &obj);
@@ -728,6 +744,35 @@ namespace cluir
           }
           break;
         }
+
+
+      case Object::Type::LinkedList:
+        {
+          auto& point1 = obj.ObjectData.at(0).point_norm;
+          auto& spacing = obj.ObjectData.at(1).size_single;
+          point1.x = blok.position.x + (DEAFULT_SCREEN_PADDING)*2;
+          point1.y = blok.position.y + (DEAFULT_SCREEN_PADDING)+1;
+          uint cordinate = point1.y;
+          uint padding = 0;
+          std::cout << "( point ) : " << value1.point_norm.x << " : " << value1.point_norm.y << "\n"; 
+          for(uint l=0; l < ptr_value.size(); l++) {
+            std::string& siz = *ptr_value.at(l);
+            std::cout << "size * ->" << siz.size() << "\n";
+            padding = ((float) siz.size() / (blok.size.x - DEAFULT_SCREEN_PADDING*4));
+            std::cout << "(padding) : " << padding << "\n"; 
+            {
+              point constructed_point = {
+                point1.x, 
+                cordinate + l 
+              };
+              write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, siz );
+              cordinate = cordinate + padding+ (uint)spacing; 
+            }
+          }
+          break;
+        }
+
+
       case Object::Type::FancyBorder:
         { 
           //blok.border_solid(&obj);
@@ -748,8 +793,10 @@ namespace cluir
 
   void Screen::flush_colors() 
   {
+    std::cout << "flush_color called\n";
     for(uint h = 0 ; h < screen_size.y; h++) {
       for(uint w = 0; w < screen_size.x; w++) {
+        
         ColorMap.at(w, h) = get_color_from_bind(ValuesMap.at(w, h));
       }
     }
@@ -763,6 +810,8 @@ namespace cluir
     for (uint blocks = 0; blocks < BlockList.size(); blocks++) {
       auto List = BlockList.at(blocks).ObjectList;
       auto& blok = BlockList.at(blocks); 
+      
+      std::cout << "handler called\n";
       for (uint i = 0; i < List.size(); i++) 
       {
         auto obj = List.at(i);
@@ -886,7 +935,7 @@ namespace cluir
         .ScrollDown = 's',
         .ScrollRight = 'd',
         .ScrollLeft = 'a',
-        .Terminate = '`',
+        .Terminate = 'z',
         .Nothing = (char)0
         });
     return  im;
