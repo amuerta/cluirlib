@@ -86,6 +86,7 @@ enum COLORS {
 
 namespace cluir {
  
+  typedef vec2<uint> size;
   typedef vec2<uint> point;
   typedef vec2<uint> line;
   typedef vec2<uint> rectangle;
@@ -166,16 +167,29 @@ namespace cluir {
     
     point last_object_position;
     point position;
-    vec2<uint> size;
     vec2<percent> position_percents;
+    
+    vec2<uint> size;
     vec2<percent> size_percents;
-   
+ 
+    vec2<uint> block_padding;
+    vec2<uint> block_margin;
+
+    uint border_widht;
+
     std::vector<Object> ObjectList;
 
     private:void MapBlock(std::vector<Object> elements);
+    
     public:void border_solid(Object *target);
     public:void title(std::string label, Object *target);
     public:void list(std::vector<std::string> elements, Object *target);
+    
+    // Scaling functions 
+    public:Block *setPadding(vec2<uint> pixels);
+    public:Block *setMargin(vec2<uint> pixels);
+
+    public:Block *Add_Text(uint paragraph_padding, uint text_padding,  std::string *text );
     public:Block *CreateList(std::vector<std::string> list, size_t spacing);
     public:Block *CreateLinkedList(std::vector<std::string*> ptr_list, size_t spacing);
     public:Block *UseFancyBorder();
@@ -191,6 +205,10 @@ namespace cluir {
     pixel pixel_to_draw;
 
     vec2<uint> screen_size;
+    vec2<uint> screen_padding;
+    vec2<uint> screen_margin;
+
+
     std::vector<Block> BlockList;
     Dynamic2DArray<pixel> ValuesMap;
     Dynamic2DArray<color> ColorMap;
@@ -206,10 +224,13 @@ namespace cluir {
     private:void tiled_align();
 
     public:Screen scale(uint scaling_factor_x, uint scaling_factor_y);
+    public:Screen *set_padding(vec2<uint> pixels);
+    public:Screen *set_margin(vec2<uint> pixels);
     public:Screen fill_solid();
     public:Screen fill_empty();
     public:Screen *set_drawing_pixel(pixel type);
     public:
+     //Useless: Screen *write_linkedtext(uint max_line_lenth, point origin,std::string *text);
      Screen *write_text(uint max_line_lenth,point origin,std::string text);
      Screen *draw_point(point p, pixel pix);
      Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, pixel line_types[6]);
@@ -224,6 +245,10 @@ namespace cluir {
     public:void handler(Object obj, Block blk);
     public:void flush();
     public:void flush_colors();
+  
+    // OVERLOADS
+    public:Screen *set_padding(uint pixels);
+    public:Screen *set_margin(uint pixels);
   };
 
   struct Renderer {

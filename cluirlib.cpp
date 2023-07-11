@@ -13,13 +13,15 @@
 //     
 //    *fix alignment for Objects, make them reserve space? 
 
+// DONE :
+// : dynamic text and lists
+// : Color support [v]
+
 // TODO : text file pasrser 
 // TODO : event system < - > data manager < - > screen
-// TODO : dynamic text and lists
 // TODO : keypresses server -> event server
 // TODO : fix tiled mode 
 // TODO : percentage scaling func
-// TODO : Color support [v]
 // TODO : Renderer settings // custom ui symbols
 // TODO : function calls upon pressing buttonz
 // TODO : Track System for DataManager + screen->block->object id finding
@@ -99,6 +101,8 @@ namespace cluir
   Block NewBlock(Block::BlockT type) 
   {
     Block blk;
+    blk.border_widht = 0;
+    blk.last_object_position = {0,0};
     blk.BlockType = type;
     return blk;
   }
@@ -152,9 +156,11 @@ namespace cluir
   void Screen::horizontal_tiled_align() {
     for (uint block_counter = 0; block_counter < BlockList.size(); block_counter++) 
     {
-      uint size_x = screen_size.x / BlockList.size() - 1;  
-      uint size_y = screen_size.y;
-      uint root_x = size_x * block_counter;
+      uint size_x = ((screen_size.x - screen_padding.x*2) / BlockList.size()) - 1;
+      uint size_y = screen_size.y - (screen_padding.x*2);
+      
+      uint root_y = 0 + screen_padding.x;
+      uint root_x = screen_padding.x + size_x * block_counter;
 
       BlockList.at(block_counter).size = {
         .x = size_x,
@@ -163,7 +169,7 @@ namespace cluir
       
       BlockList.at(block_counter).position = {
         .x = root_x,
-        .y = 0
+        .y = root_y
       };
     } 
   }
@@ -221,6 +227,7 @@ namespace cluir
     ValuesMap.at(p.x, p.y) = pix;
     return this;
   }
+ 
 
   Screen *Screen::write_text(uint max_line_lenth,point origin,std::string text) 
   {
@@ -477,6 +484,12 @@ namespace cluir
     rgb[2] = value - value / 1000*1000; 
     return  "\e[38;2;" + std::to_string(rgb[0]) + ";" + std::to_string(rgb[1]) + ";" + std::to_string(rgb[2]) + "m";
   }
+
+  std::string colorize(color value) 
+  {
+    Renderer dummy;
+    return dummy.convert_raw_color(value);
+  }
   
   image_piece Renderer::convert_raw_pixel(uint pixel) {
     switch (pixel) {
@@ -504,6 +517,7 @@ namespace cluir
           std::string s(1,char(pixel));
           return s;
         }
+
       default: 
         return "E";
     }
@@ -545,12 +559,44 @@ namespace cluir
     }
     return *this;
   }
+   
 
+   Screen *Screen::set_padding(uint pixels) 
+   {
+     screen_padding.x = pixels;
+     screen_padding.y = pixels;
+     return this;
+   }
+ 
+   Screen *Screen::set_margin(uint pixels) 
+   {
+     screen_margin.x = pixels;
+     screen_margin.y = pixels;
+     return this;
+   }
+
+   Screen *Screen::set_padding(vec2<uint>pixels)
+   {
+
+     screen_padding.x = pixels.x;
+     screen_padding.y = pixels.y;
+     return this;
+   }
+
+
+   Screen *Screen::set_margin(vec2<uint> pixels) 
+   {
+     screen_margin.x = pixels.x;
+     screen_margin.y = pixels.y;
+     return this;
+   }
 
 
   Screen NewScreen() {
     Screen scr;
     scr.scale(100,100);
+    scr.screen_margin = {0,0};
+    scr.screen_padding = {0,0};
     scr.fill_empty();
     std::cout << "\nscreen created\n";
     std::cout << "scr.size.x = " << scr.screen_size.x << " | scr.size.y = " << scr.screen_size.y << " \n"; 
@@ -563,8 +609,36 @@ namespace cluir
 //
 //
 
+  Block *Block::setPadding(vec2<uint> pixels) 
+  {
+    block_padding.x = pixels.x;
+    block_padding.y = pixels.y;
+    return this;
+  }
+  
+
+  Block *Block::setMargin(vec2<uint> pixels) 
+  {
+    block_margin.x = pixels.x;
+    block_margin.y = pixels.y;
+    return this;
+  }
+  
+
+  Block *Block::Add_Text(uint paragraph_padding, uint text_padding,  std::string *text) 
+  {
+    Object o;
+    o.type = o.Text;
+    for(uint i=0; i<paragraph_padding; i++) {text->append(" ");}
+    o.PtrData.at(0) = text;
+    o.ObjectData.at(0).point_norm = { .x = position.x + 2 + text_padding, .y = position.y + 2 };
+    MapBlock({o});
+    return this;
+  }
+
   Block *Block::UseFancyBorder() {
     Object border;
+    border_widht = 1;
     border.type = border.FancyBorder;
     MapBlock({border});
     return this;
@@ -572,10 +646,12 @@ namespace cluir
 
   Block *Block::UseSolidBorder() {
     Object border;
+    border_widht = 1;
     border.type = border.Border;
     MapBlock({border});
     return this;
   }
+
 
   Block *Block::Add_Title(std::string label) {
     Object title;
@@ -639,6 +715,7 @@ namespace cluir
   }
 
 // EXAMPLE IF I EVER WANT TO GO BACK FOR THE OLD DESIGN
+// I DONT.
   // void Block::border_solid(Object *target) 
   // {
   //   auto& point1 = target->ObjectData.at(0).point_norm;
@@ -654,6 +731,7 @@ namespace cluir
   void Screen::handler(Object obj, Block blok) {
 
     auto& chk = obj.ObjectData.at(1);
+    auto& data = obj.ObjectData;
     auto& value1 = obj.ObjectData.at(0);
     auto& value2 = obj.ObjectData.at(1);
     auto& except_value = obj.ExceptionalObjectData;
@@ -681,7 +759,7 @@ namespace cluir
         break;
       
       case Object::Type::Text:
-        write_text(30,value1.point_norm, except_value1);
+        write_text(blok.size.x - blok.block_padding.x,value1.point_norm, *ptr_value.at(0));
         break;
       
       case Object::Type::Border:
@@ -702,7 +780,6 @@ namespace cluir
 
       case Object::Type::Title:
         {
-          //blok.title(obj.ExceptionalObjectData.at(0), &obj);
           auto& point1 = obj.ObjectData.at(0).point_norm;
           auto& chk = obj.ObjectData.at(1).checker;
           auto& str1 = obj.ExceptionalObjectData.at(0);
@@ -720,13 +797,12 @@ namespace cluir
         }
       
       case Object::Type::List:
-        // blok.list(except_value, &obj);
         {
           auto& point1 = obj.ObjectData.at(0).point_norm;
           auto& spacing = obj.ObjectData.at(1).size_single;
-          point1.x = blok.position.x + (DEAFULT_SCREEN_PADDING)*2;
-          point1.y = blok.position.y + (DEAFULT_SCREEN_PADDING)+1;
-          uint cordinate = point1.y;
+          point1.x = blok.position.x + blok.border_widht + DEAFULT_SCREEN_PADDING;
+          point1.y = blok.position.y + blok.border_widht + DEAFULT_SCREEN_PADDING;
+          uint cordinate = point1.y + blok.last_object_position.y;
           uint padding = 0;
           std::cout << "( point ) : " << value1.point_norm.x << " : " << value1.point_norm.y << "\n"; 
           for(uint l=0; l < except_value.size(); l++) {
@@ -734,14 +810,17 @@ namespace cluir
             std::cout << "(padding) : " << padding << "\n"; 
             {
               point constructed_point = {
-                point1.x, 
+                point1.x + blok.block_padding.x, 
                 //cordinate = cordinate + round((float)l/2) + padding
-                cordinate + l 
+                // scizophrenia be like
+                cordinate + blok.block_padding.y + l 
               };
-              write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, except_value.at(l));
+              write_text(blok.size.x-blok.block_padding.x*2,constructed_point, except_value.at(l));
               cordinate = cordinate + padding+ (uint)spacing; 
+              blok.last_object_position.y = cordinate; 
             }
           }
+
           break;
         }
 
@@ -750,9 +829,9 @@ namespace cluir
         {
           auto& point1 = obj.ObjectData.at(0).point_norm;
           auto& spacing = obj.ObjectData.at(1).size_single;
-          point1.x = blok.position.x + (DEAFULT_SCREEN_PADDING)*2;
-          point1.y = blok.position.y + (DEAFULT_SCREEN_PADDING)+1;
-          uint cordinate = point1.y;
+          point1.x = blok.position.x + blok.border_widht + DEAFULT_SCREEN_PADDING;//blok.block_padding.x;
+          point1.y = blok.position.y + blok.border_widht + DEAFULT_SCREEN_PADDING; // blok.block_padding.y;
+          uint cordinate = point1.y + blok.last_object_position.y;
           uint padding = 0;
           std::cout << "( point ) : " << value1.point_norm.x << " : " << value1.point_norm.y << "\n"; 
           for(uint l=0; l < ptr_value.size(); l++) {
@@ -762,20 +841,21 @@ namespace cluir
             std::cout << "(padding) : " << padding << "\n"; 
             {
               point constructed_point = {
-                point1.x, 
-                cordinate + l 
+                point1.x + blok.block_padding.x, 
+                cordinate + blok.block_padding.y + l 
               };
-              write_text(blok.size.x-(DEAFULT_SCREEN_PADDING)*4,constructed_point, siz );
+              write_text(blok.size.x-blok.block_padding.x*4,constructed_point, siz );
               cordinate = cordinate + padding+ (uint)spacing; 
+              blok.last_object_position.y = cordinate;
             }
           }
+
           break;
         }
 
 
       case Object::Type::FancyBorder:
         { 
-          //blok.border_solid(&obj);
           auto& point1 = obj.ObjectData.at(0).point_norm;
           auto& size1 = obj.ObjectData.at(1).size_int;
           point1.x = blok.position.x+DEAFULT_SCREEN_PADDING;
@@ -796,7 +876,6 @@ namespace cluir
     std::cout << "flush_color called\n";
     for(uint h = 0 ; h < screen_size.y; h++) {
       for(uint w = 0; w < screen_size.x; w++) {
-        
         ColorMap.at(w, h) = get_color_from_bind(ValuesMap.at(w, h));
       }
     }
