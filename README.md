@@ -50,4 +50,4 @@ use it
     - file parser
 
 ## Preview:
-![preview-1](https://github.com/amuerta/cluirlib/imgs/demo1.png)
+![preview-1](https://github.com/amuerta/cluirlib/master/imgs/demo1.png)
