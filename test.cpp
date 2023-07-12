@@ -1,5 +1,4 @@
 #include "cluirlib.cpp"
-#include <string>
 
 int main ()
 {
@@ -26,42 +25,50 @@ int main ()
    //blk2.UseFancyBorder();
    
 
+   
+    std::string text =  "   About CLUIRLIB";
+    std::string text2 = "Cluir is abarviation for Command Line User Interface Rendering LIBrary, this is my take on learning how to build more complex things like tui libraries and stuff made using them";
+    std::string text3 = "This thing will be able to everything that you would expect from tui library (Menus, Grid, On Canvas Drawing, Text, and many more), for now its under development, just like my soft brain. ";
+    std::string text4 = "If you want to start using it, you can clone the repo and just copy cluirlib.h and cluirlib.cpp files to your project, include only .cpp file.";
+   
 
-   std::string text =  "   About Tea";
-   std::string text2 = "Tea is an aromatic beverage prepared by pouring hot or boiling water over cured or fresh leaves of Camellia sinensis, an evergreen shrub native to East Asia which probably originated in the borderlands of southwestern China and northern Myanmar.";
-   std::string text3 = "Tea is also made, but rarely, from the leaves of Camellia taliensis. After plain water, tea is the most widely consumed drink in the world.";
-   std::string text4 = "There are many different types of tea; some have a cooling, slightly bitter, and astringent flavour, while others have profiles that include sweet, nutty, floral, or grassy notes. Tea has a stimulating effect in humans primarily due to its caffeine content.";
-
-   blk
-      .UseFancyBorder()
-      ->setPadding({2,2})
-      ->Add_Title(" CLUIR TEXT DEMO ")
-      // ->CreateList({
-      //       "* I am a magician of text ui heheh",
-      //       "* Render text to a screen in list manner",
-      //       "TODO: literally anything else",
-      //       "[?] cool?", 
-      //       "[!] yes."}
-      //       ,1)
-      ->CreateLinkedList({
-            &text,
-            &text2,
-            &text3,
-            &text4
-            }, 2)
-      // ->CreateLinkedList({
-      //       &text,
-      //       &text,
-      //       &text,
-      //       }, 
-      //       1)
-      //->Add_Text(0, 0, &text2);
-      ;
-      
+    blk
+       .UseFancyBorder()
+       ->setPadding({2,2})
+       //->Add_FilledRect({4,4},{10,3})
+       ->Add_Title(" CLUIR TEXT-ONLY DEMO ")
+       // ->CreateList({
+       //       "* I am a magician of text ui heheh",
+       //       "* Render text to a screen in list manner",
+       //       "TODO: literally anything else",
+       //       "[?] cool?", 
+       //       "[!] yes."}
+       //       ,1)
+       ->CreateLinkedList({
+             &text,
+             &text2,
+             &text3,
+             &text4
+             }, 2)
+   //    // ->CreateLinkedList({
+   //    //       &text,
+   //    //       &text,
+   //    //       &text,
+   //    //       }, 
+   //    //       1)
+   //    //->Add_Text(0, 0, &text2);
+       ;
+   //    
    SCR.add_blocks({ blk, blk2, blk2, })->block_alignment(cluir::BlockAlignment::Horizontal_Tiled);
-   
+   // 
+   SCR.set_drawing_pixel(FILLED_PIXEL);
+   //SCR.draw_line({0,15}, {5, 5}); 
+   SCR.draw_circle({150,25}, 8, 2, false);
+   SCR.draw_circle({110,30}, 8, 2, false);
+   SCR.draw_line({138,25}, {122,27});
+   SCR.draw_line({164,25}, {140,5});
+   SCR.draw_line({110-16,30}, {70,10});
 
-   
    SCR.flush(); 
    // SCR.flush_colors();   
    
@@ -72,8 +79,11 @@ int main ()
    drawer.render(frame);
    keymanager.WaitForAnyEvent();
    std::cout << cluir::colorize(color) + "aaaaaaaaaaaa";
-   // if(keymanager.readUserInput()==cluir::event::Terminate)
+
+
+
+    
       // std::cout << "term";
-   // drawer.finish();
+    drawer.finish();
 
 }

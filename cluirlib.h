@@ -17,6 +17,52 @@
 #include <ios>
 #include <termios.h>
 
+
+
+//
+//
+// TODO:
+//    * make screen edges more pleasant and give user a choice 
+//    how to handle them
+//      - C.M. Current solution is about creating a border out 
+//      of 1 char to each side of terminal window
+//
+//    +- move implementations of different functions to switch(obj) and 
+//    the entire statement to saparated function! to tower it!
+//     
+//    *fix alignment for Objects, make them reserve space? 
+
+// DONE :
+// : dynamic text and lists
+// : Color support [v]
+
+// TODO : DEBUG SYSTEM
+// TODO : text file pasrser 
+// TODO : event system < - > data manager < - > screen
+// TODO : keypresses server -> event server
+// TODO : fix tiled mode 
+// TODO : percentage scaling func
+// TODO : Renderer settings // custom ui symbols
+// TODO : function calls upon pressing buttonz
+// TODO : Track System for DataManager + screen->block->object id finding
+// TODO ! Dynamic Object swaping
+// TODO ! Dynamic Block swaping
+// TODO ! repaint , invert , other color methods
+// TODO ! fill shape functions (methods)
+//       + filled rect
+//       + thick line
+//       + Filled circle
+//       + Circle
+//       + Tringle
+//       
+// TODO ! DataManager global timer
+// TODO ? DataManager server
+// TODO : focus / back / terminate / close event calls
+// TODO : Create predefined blocks = { List, ScrollList , ScrollMenu , Menu , Grid , Canvas , Graph , TowerGraph , Panel, PopUp, textfield }
+
+
+
+
 //#include <conio.h>
 
 //
@@ -90,10 +136,25 @@ namespace cluir {
   typedef vec2<uint> point;
   typedef vec2<uint> line;
   typedef vec2<uint> rectangle;
+  //typedef vec2<uint> rectangle[2]; #TODO
   typedef Dynamic2DArray<pixel> canvas; 
 
   typedef char key;
   
+
+  struct parametrs 
+  {
+    bool filled;
+    
+    color forefround;
+    color background;
+
+    std::vector<color> specific_element_color;
+    float x_scaling;
+    float y_scaling;
+
+  };
+
 
   enum event {
     Back,
@@ -118,6 +179,7 @@ namespace cluir {
       Point,
       Line,
       Rect,
+      FilledRect,
       Circle,
       Text,
       Border,
@@ -192,6 +254,8 @@ namespace cluir {
     public:Block *Add_Text(uint paragraph_padding, uint text_padding,  std::string *text );
     public:Block *CreateList(std::vector<std::string> list, size_t spacing);
     public:Block *CreateLinkedList(std::vector<std::string*> ptr_list, size_t spacing);
+    public:Block *Add_FilledRectPercents(vec2<percent> root_pos, vec2<percent> size);
+    public:Block *Add_FilledRect(vec2<uint> root_pos, vec2<int> size);
     public:Block *UseFancyBorder();
     public:Block *UseSolidBorder();
     public:Block *Add_Title(std::string label);
@@ -233,11 +297,11 @@ namespace cluir {
      //Useless: Screen *write_linkedtext(uint max_line_lenth, point origin,std::string *text);
      Screen *write_text(uint max_line_lenth,point origin,std::string text);
      Screen *draw_point(point p, pixel pix);
-     Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, pixel line_types[6]);
+     Screen *draw_rect(vec2<uint> top_left_position, vec2<int> size, pixel line_types[6], bool filled);
      Screen *draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size);
      Screen *draw_line(point begin, point end);
      Screen *draw_line_percents(vec2<percent> begin, vec2<percent> end);
-     Screen *draw_circle(point center, uint radius);
+     Screen *draw_circle(point center, uint radius, float y_multiplyer, bool filled);
     public:Screen *add_blocks(std::vector<Block> blk);
     public:Screen *block_alignment(BlockAlignment Type);
     // TODO: public:Screen *block_alignment(std::vector<std::vector<uint>> proportions);
@@ -280,7 +344,8 @@ namespace cluir {
     InputManager *SetKeys(key_binds k);
     
     private:event generate_event_from_key(key k);
-    private:char readkey();
+    //private:
+    public:char readkey();
     public:std::vector<event> EventJournal;
     event readUserInput();
     void StartInputServer();

@@ -1,38 +1,11 @@
 #include "cluirlib.h"
+#include <string>
+#include <type_traits>
+#include <vector>
 
-//
-//
-// TODO:
-//    * make screen edges more pleasant and give user a choice 
-//    how to handle them
-//      - C.M. Current solution is about creating a border out 
-//      of 1 char to each side of terminal window
-//
-//    +- move implementations of different functions to switch(obj) and 
-//    the entire statement to saparated function! to tower it!
-//     
-//    *fix alignment for Objects, make them reserve space? 
 
-// DONE :
-// : dynamic text and lists
-// : Color support [v]
 
-// TODO : text file pasrser 
-// TODO : event system < - > data manager < - > screen
-// TODO : keypresses server -> event server
-// TODO : fix tiled mode 
-// TODO : percentage scaling func
-// TODO : Renderer settings // custom ui symbols
-// TODO : function calls upon pressing buttonz
-// TODO : Track System for DataManager + screen->block->object id finding
-// TODO ! Dynamic Object swaping
-// TODO ! Dynamic Block swaping
-// TODO ! repaint , invert , other color methods
-// TODO ! fill shape functions (methods)
-// TODO ! DataManager global timer
-// TODO ? DataManager server
-// TODO : focus / back / terminate / close event calls
-// TODO : Create predefined blocks = { List, ScrollList , ScrollMenu , Menu , Grid , Canvas , Graph , TowerGraph , Panel, PopUp, textfield }
+
 
 template<typename T>
 uint Dynamic2DArray<T>::size_x() {
@@ -61,6 +34,7 @@ void Dynamic2DArray<T>::reserve(uint size_x , uint size_y) {
 } 
 
 
+void debug(std::string msg) {std::cout << "\033[0;32m" << msg << "\033[0m\n";}
 bool expression_with_error(std::string message) {std::cout<<"[!]>>"<<message<<"\n"; return false;}
 void gotoxy(int x, int y) {printf("\033[%d;%dH", y, x);}
 //printf("%c[%d;%df",0x1B,y,x)^^^^^^^^^^^^^^^^^; 
@@ -94,7 +68,7 @@ namespace cluir
 //
 
   bool Screen::integrety_check(point cordinate) {
-    return (cordinate.x < screen_size.x and cordinate.y < screen_size.y) ? true : expression_with_error("Out of bounds"); 
+    return (cordinate.x < screen_size.x and cordinate.y < screen_size.y) ? true : expression_with_error("Out of bounds (x;y) -> " + std::to_string(cordinate.x) + ":" + std::to_string(cordinate.y)); 
   }
    
 
@@ -152,6 +126,9 @@ namespace cluir
     }
     return COLORS::WHITE;
   }
+
+
+  // alignment
 
   void Screen::horizontal_tiled_align() {
     for (uint block_counter = 0; block_counter < BlockList.size(); block_counter++) 
@@ -212,12 +189,11 @@ namespace cluir
   }
 
   
-
-
+  // drawing 
+ 
   Screen *Screen::set_drawing_pixel(pixel type) 
   {
     pixel_to_draw = type;
-    std::cout << pixel_to_draw << " <- pixel \n";
     return  this;
   }
 
@@ -227,7 +203,8 @@ namespace cluir
     ValuesMap.at(p.x, p.y) = pix;
     return this;
   }
- 
+
+
 
   Screen *Screen::write_text(uint max_line_lenth,point origin,std::string text) 
   {
@@ -258,123 +235,89 @@ namespace cluir
     return this;
   }
 
+
+
+
+
   Screen *Screen::draw_line(point begin, point end ) {
-    std::cout << "draw call  : draw_pixel -> " << pixel_to_draw << "\n";
-    int difference_x = (end.x - begin.x);
-    int difference_y = (end.y - begin.y);
-    int sign_x = (begin.x < end.x) ? 1 : -1;
-    int sign_y = (begin.y < end.y) ? 1 : -1;
-    int change_bias = difference_x - difference_y;
 
-    if(integrety_check({end.x,end.y})) 
-    {
-      ValuesMap.at(end.x, end.y) = pixel_to_draw;
+    int x = begin.x;
+    int y = begin.y;
+    int x2 = end.x;
+    int y2 = end.y;
+
+    int w = x2 - x ;
+    int h = y2 - y ;
+    int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0 ;
+   
+    if (w<0) dx1 = -1 ; else if (w>0) dx1 = 1 ;
+    if (h<0) dy1 = -1 ; else if (h>0) dy1 = 1 ;
+    if (w<0) dx2 = -1 ; else if (w>0) dx2 = 1 ;
+    
+    int longest = abs(w) ;
+    int shortest = abs(h) ;
+    
+    if (!(longest>shortest)) {
+        longest = abs(h) ;
+        shortest = abs(w) ;
+        if (h<0) dy2 = -1 ; else if (h>0) dy2 = 1 ;
+        dx2 = 0 ;            
     }
-    while(begin.x != end.x || begin.y != end.y) 
-    {
-      if(integrety_check({begin.x, begin.y})) 
-      {
-        ValuesMap.at(begin.x, begin.y) = pixel_to_draw;
-      }
-      int bias_after = change_bias * 2;
-      if (bias_after > -difference_y) 
-      {
-        change_bias -= difference_y;
-        begin.x += sign_x;
-      }
-      if (bias_after < difference_x) 
-      {
-        change_bias += difference_x;
-        begin.y += sign_y;
-      }
-    } 
-    return this;
-  }
-
-  
-  Screen *Screen::draw_line_percents(vec2<percent> begin, vec2<percent> end ) {
-    std::cout << "draw call  : draw_pixel -> " << pixel_to_draw << "\n";
-    point real_begin = get_real_from_percents( get_screen_size() ,  begin);
-    point real_end = get_real_from_percents( get_screen_size() ,  end);
-
-    int difference_x = (real_end.x - real_begin.x);
-    int difference_y = (real_end.y - real_begin.y);
-    int sign_x = (real_begin.x < real_end.x) ? 1 : -1;
-    int sign_y = (real_begin.y < real_end.y) ? 1 : -1;
-    int change_bias = difference_x - difference_y;
-
-    if(integrety_check({real_end.x,real_end.y})) {
-      ValuesMap.at(real_end.x, real_end.y) = pixel_to_draw;
-    }
-    while(real_begin.x != real_end.x || real_begin.y != real_end.y) 
-    {
-      if(integrety_check({real_end.x,real_end.y})) {
-        ValuesMap.at(real_begin.x, real_begin.y) = pixel_to_draw;
-      }
-      int bias_after = change_bias * 2;
-      if (bias_after > -difference_y) 
-      {
-        change_bias -= difference_y;
-        real_begin.x += sign_x;
-      }
-      if (bias_after < difference_x) 
-      {
-        change_bias += difference_x;
-        real_begin.y += sign_y;
-      }
-    } 
-    return this;
-  }
-
-  /*
-  Screen Screen::draw_line(point begin, point end) {
-
-    point line_begining = (begin.x < end.x) ? begin : end;
-    point line_ending = (begin.x < end.x) ? end : begin;
-    uint lenth = end.x - begin.x;
-    uint height = end.y - begin.y;
-    double slope = (double)height/(double)lenth;
-    std::cout << "slope ==> "<< slope << "\n";
-    for(uint x = line_begining.x; x < line_ending.x; x++) 
-    { 
-      if(slope > 1 ) {
-        for (uint y = round(slope*x); y < round(slope*(x+1)); y++) {
-          ValuesMap
-            .at( x , y ) = FILLED_PIXEL;
+    
+    int numerator = longest >> 1 ;
+    
+    for (int i=0;i<=longest;i++) {
+      ValuesMap.at(x,y) = FILLED_PIXEL;  
+        numerator += shortest ;
+        if (!(numerator<longest)) {
+            numerator -= longest ;
+            x += dx1 ;
+            y += dy1 ;
+        } else {
+            x += dx2 ;
+            y += dy2 ;
         }
-      }
-      else {
-        ValuesMap
-          .at( x , round((slope)*x) ) = FILLED_PIXEL;
-      }
-      std::cout << "x : " << x << "  y : " << round((slope * x)) << "\n";
     }
-    return *this;
+
+    return this;
   }
-*/
 
-  Screen *Screen::draw_circle(point center, uint radius) {
-    rectangle render_area = {
-      .x = radius * 2,
-      .y = radius * 2
-    };
 
-    point area_root = {
-      .x = center.x - radius,
-      .y = center.y - radius
-    };
+  Screen *Screen::draw_circle(point center, uint radius, float x_multiplyer, bool filled) {
 
-    for (uint ypos = area_root.y; ypos < render_area.y + area_root.y; ypos++) 
-    { for (uint xpos = area_root.x; xpos < render_area.x + area_root.x; xpos++) 
-      { if (std::pow(radius, 2) < ( std::pow(xpos,2) + std::pow(ypos,2)) ) {
-           ValuesMap.at(xpos,ypos) = FILLED_PIXEL;
-         }
+    static const double PI = 3.1415926535;
+    double i, angle, x1, y1;
+
+    if(!filled) {
+      for(i = 0; i < 360; i += 1)
+      {
+        angle = i;
+        x1 = radius * cos(angle * PI / 180) * x_multiplyer;
+        y1 = radius * sin(angle * PI / 180);
+        ValuesMap.at(center.x + (uint)x1, center.y + (uint)y1) = FILLED_PIXEL;
+      }
+    } else {
+      for(uint u = 0; u<2; u++ ) {
+        for(i = 0; i < 360; i += 0.1)
+        {
+          angle = i;
+          x1 = (radius-u) * cos(angle * PI / 180) * x_multiplyer;
+          y1 = (radius-u) * sin(angle * PI / 180);
+          //ValuesMap.at(center.x + (uint)x1, center.y + (uint)y1) = FILLED_PIXEL;
+          draw_line(center, 
+              {
+              center.x + (uint)x1,
+              center.y + (uint)y1
+              });
+        }
       }
     }
     return  this;
   }
 
-  Screen *Screen::draw_rect(point top_left_position, vec2<int> size, pixel line_types[6]) {
+  
+
+  Screen *Screen::draw_rect(point top_left_position, vec2<int> size, pixel line_types[6], bool filled) {
     const pixel horizontal_line = line_types[0];
     const pixel vertical_line = line_types[1];
     const pixel top_left_corner = line_types[2];
@@ -410,15 +353,27 @@ namespace cluir
       begin_y = top_left_position.y + size.y;
       end_y = top_left_position.y;
     }
-    for(uint horizontal=begin_x; horizontal < end_x; horizontal++) 
-    {
-      ValuesMap.at(horizontal, begin_y) = horizontal_line;
-      ValuesMap.at(horizontal, end_y-1) = horizontal_line;
+    
+    if (!filled) {
+      for(uint horizontal=begin_x; horizontal < end_x; horizontal++) 
+      {
+        ValuesMap.at(horizontal, begin_y) = horizontal_line;
+        ValuesMap.at(horizontal, end_y-1) = horizontal_line;
+      }
+      for(uint vertical=begin_y; vertical < end_y; vertical++) 
+      {
+        ValuesMap.at(begin_x, vertical) = vertical_line;
+        ValuesMap.at(end_x-1, vertical) = vertical_line;
+      }
     }
-    for(uint vertical=begin_y; vertical < end_y; vertical++) 
-    {
-      ValuesMap.at(begin_x, vertical) = vertical_line;
-      ValuesMap.at(end_x-1, vertical) = vertical_line;
+    else {
+      for(uint vertical=begin_y; vertical < end_y; vertical++) 
+      {
+        for(uint horizontal=begin_x; horizontal < end_x; horizontal++) 
+        {
+          ValuesMap.at(horizontal, vertical) = FILLED_PIXEL;
+        }
+      }
     }
 
     ValuesMap.at(top_left_position.x, top_left_position.y) = top_left_corner;
@@ -429,7 +384,7 @@ namespace cluir
     return this;
   }
 
-
+ 
 
   Screen *Screen::draw_rect_percents(vec2<percent> top_left_position, vec2<percent> size) {
     
@@ -636,6 +591,20 @@ namespace cluir
     return this;
   }
 
+  
+
+  Block *Block::Add_FilledRect(vec2<uint> root_pos, vec2<int> size) 
+  {
+    Object o;
+    o.type = o.FilledRect;
+    o.ObjectData.at(0).point_norm = root_pos;
+    o.ObjectData.at(1).size_int = size;
+    MapBlock({o});
+    return this;
+  }
+
+
+
   Block *Block::UseFancyBorder() {
     Object border;
     border_widht = 1;
@@ -751,11 +720,14 @@ namespace cluir
         break;
       
       case Object::Type::Rect:
-        draw_rect(value1.point_norm,value2.size_int, FILLER);
+        draw_rect(value1.point_norm,value2.size_int, FILLER, false);
         break;
       
+      case Object::Type::FilledRect:
+        draw_rect(value1.point_norm,value2.size_int, FILLER, true);
+      
       case Object::Type::Circle:
-        draw_circle(value1.point_norm, value2.single_int );
+        draw_circle(value1.point_norm, value2.single_int, 2 , false);
         break;
       
       case Object::Type::Text:
@@ -774,7 +746,7 @@ namespace cluir
           point1.y = blok.position.y+DEAFULT_SCREEN_PADDING;
           size1.x = blok.size.x;
           size1.y = blok.size.y-1;
-          draw_rect(value1.point_norm,value2.size_int,FILLER);
+          draw_rect(value1.point_norm,value2.size_int,FILLER,false);
           break;
         }
 
@@ -863,7 +835,7 @@ namespace cluir
           size1.x = blok.size.x;
           size1.y = blok.size.y-1;
 
-          draw_rect(value1.point_norm,value2.size_int, FANCYBORDER);
+          draw_rect(value1.point_norm,value2.size_int, FANCYBORDER, false);
           break;
         }
       case Object::Type::Nothing:
