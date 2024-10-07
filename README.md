@@ -1,3 +1,5 @@
+# THIS LIBRARY WAS MY C++ LEARNING SANDBOX, ITS NOT INTENDED TO BE USED
+
 # Command Line User Interface Rendering Library
 
 ## What cluir-lib is?
